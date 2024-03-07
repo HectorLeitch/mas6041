@@ -8,11 +8,14 @@ import os
 
 def make_u_model(u):
     """
-    Create a model that evaluates a Boolean function defined by the input u.
+    Create a model that computes a Boolean function defined by the input u.
 
-    The first layer creates 2^n - 1 varaibles using the ReLU activation layer.
+    The first layer creates 2^n - 1 variables using the ReLU activation layer.
     The second layer combines them according to weights derived from u.
     Works reasonably quickly for n <= 8.
+    Predictions can be made on a tensor with n entries in {0,1}.
+
+    u : np.array with 2^n entries in {0,1}.
     """
     n = int(np.log2(u.shape[0]))
     inputs = tf.keras.Input(shape=(n))
@@ -42,12 +45,15 @@ def make_u_model(u):
 
 def make_n_model(n):
     """
-    Create a model to evaluate all Boolean functions simultaneously, given n.
+    Create a model to compute all Boolean functions simultaneously for a given n.
 
-    The first layer creates 2^n - 1 varaibles using the ReLU activation layer.
+    The first layer creates 2^n - 1 variables using the ReLU activation layer.
     The second layer combines them according to weights derived from the u
     values across all possible Boolean functions.
     Works for n < 5, after which there are too many weights.
+    Predictions can be made on a tensor with n entries in {0,1}.
+
+    n : an integer; either 2,3, or 4.
     """
     inputs = tf.keras.Input(shape=(n))
     dense1 = tf.keras.layers.Dense(2**n-1, activation='relu')(inputs)
