@@ -95,16 +95,50 @@ def load_approx_model(p=3):
     model_dir = os.path.join(models_dir, 'digits_model_' + repr(p))
     approx_model = tf.keras.models.load_model(model_dir)
 
+
+
+
+# first make a light version of the full model above that computes
+# a boolean function specified by inputs u_0 to u_2^n-1
+# same as full model but uses a single u instead of bool_funs
+def make_u_model(u):
+
+    n = int(np.log2(u.shape[0]))
+    inputs = tf.keras.Input(shape=(n))
+    dense1 = tf.keras.layers.Dense(2**n-1, activation='relu')(inputs)
+    dense2 = tf.keras.layers.Dense(1, activation='linear')(dense1)
+    u_model = tf.keras.Model(inputs=inputs, outputs=dense2, name='u_model')
+    u_model.compile(loss='binary_crossentropy', metrics=['accuracy'])
+
+    bool_in = list(itertools.product(*[[0,1]]*n))
+
+    w0 = np.array(bool_in)[1:]
+    b0 = 1-sum(w0.T)
+    u_model.layers[1].set_weights([w0.T,b0])
+
+    w1 = np.zeros((1,2**n))
+    for j in range(2**n):
+        w1[:,j] = w1[:,j] + u[j]
+        for k in range(j):
+            if all(np.array(bool_in)[j] >= np.array(bool_in)[k]):
+                w1[:,j] = w1[:,j] - w1[:,k]
+    # drop first term u0 from the weight matrix and add it in as a bias
+    w1 = w1[:,1:]
+    b1 = np.array([u[0]])
+    u_model.layers[2].set_weights([w1.T,b1])
+    return u_model
+
+
+
+
+
+
 # try to do the boolean functions example in n dimensions
 
-n=3
-bool_in = list(itertools.product(*[[0,1]]*n)) #list(itertools.product([0,1], repeat=n))
-bool_funs = list(itertools.product(*[[0,1]]*(2**n)))
 
 # This function creates a model that evaluates all boolean functions
 # from R^n -> R^1 (i.e. where u_i's are scalar)
 def make_n_model(n):
-    global n_model
     inputs = tf.keras.Input(shape=(n))
     dense1 = tf.keras.layers.Dense(2**n-1, activation='relu')(inputs)
     dense2 = tf.keras.layers.Dense(2**2**n, activation='linear')(dense1)
@@ -128,7 +162,6 @@ def make_n_model(n):
     # which will have 2^n terms
     w1 = np.zeros((2**2**n,2**n))
     for j in range(2**n):
-        print(repr(j)+"out of"+repr(2**n))
         w1[:,j] = w1[:,j] + np.array(bool_funs)[:,j]
         for k in range(j):
             if all(np.array(bool_in)[j] >= np.array(bool_in)[k]):
@@ -137,14 +170,9 @@ def make_n_model(n):
     w1 = w1[:,1:]
     b1 = np.array(bool_funs)[:,0]
     n_model.layers[2].set_weights([w1.T,b1])
+    return n_model
 
 
-make_n_model(3)
-
-#n_model.predict(np.array([0,1,0]).reshape(1,3),verbose=0)
-#np.shape(n_model.predict(np.array([0,1,0]).reshape(1,3),verbose=0))
-
-n_model.layers[2].get_weights()[0]
 
 # evaluate against the original functions
 def test_n_model(n):
@@ -167,41 +195,6 @@ def test_n_model(n):
 # now try R^n -> R^m, m > 1
 # aim is to compute a single boolean function with a deeper network
 # to gain efficiency
-
-# first make a light version of the full model above that computes
-# a boolean function specified by inputs u_0 to u_2^n-1
-# same as full model but uses a single u instead of bool_funs
-def make_u_model(u):
-
-    n = int(np.log2(u.shape[0]))
-    inputs = tf.keras.Input(shape=(n))
-    dense1 = tf.keras.layers.Dense(2**n-1, activation='relu')(inputs)
-    dense2 = tf.keras.layers.Dense(1, activation='linear')(dense1)
-    u_model = tf.keras.Model(inputs=inputs, outputs=dense2, name='light_model')
-    u_model.compile(loss='binary_crossentropy', metrics=['accuracy'])
-
-    bool_in = list(itertools.product(*[[0,1]]*n))
-
-    w0 = np.array(bool_in)[1:]
-    b0 = 1-sum(w0.T)
-    u_model.layers[1].set_weights([w0.T,b0])
-
-    w1 = np.zeros((1,2**n))
-    for j in range(2**n):
-        w1[:,j] = w1[:,j] + u[j]
-        for k in range(j):
-            if all(np.array(bool_in)[j] >= np.array(bool_in)[k]):
-                w1[:,j] = w1[:,j] - w1[:,k]
-    # drop first term u0 from the weight matrix and add it in as a bias
-    w1 = w1[:,1:]
-    b1 = np.array([u[0]])
-    u_model.layers[2].set_weights([w1.T,b1])
-    return u_model
-
-
-u = np.array([0,1,1,0])
-make_light_model(u=u)
-light_model.predict(np.array([0,1]).reshape(1,2),verbose=0)
 
 
 # now try to improve efficiency
