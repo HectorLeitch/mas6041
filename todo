@@ -1,9 +1,9 @@
 To do list:
 
 1. [ ][0/17] Python code:
-    - [ ][0/2] Boolean:
+    - [ ][1/2] Boolean:
         - [ ] Experiment with a deeper network
-        - [ ] Create Jupyter notebook
+        - [x] Create Jupyter notebook
     - [ ][0/2] Piecewise:
         - [ ] Create test script
         - [ ] Create Jupyter notebook
@@ -33,8 +33,8 @@ To do list:
         - [x] Add activation functions
         - [x] Add description of training
         - [x] Add summary of dissertation
-    - [ ][0/1] Boolean:
-        - [ ] Switch to layer notation
+    - [ ][1/2] Boolean:
+        - [x] Switch to layer notation
         - [ ] Reference Jupyter notebook
     - [ ][1/2] Piecewise:
         - [x] Clean writeup
@@ -56,7 +56,7 @@ To do list:
         - [ ] Results tables
         - [ ] Introduction graphs
 
-3. [ ][0/11] General cleanup:
+3. [ ][1/11] General cleanup:
     - [ ] Remove template text
     - [ ] Replace \mathbf with \pmb
     - [ ] Adjust formatting for any lists to look good
@@ -64,7 +64,7 @@ To do list:
     - [ ] Code function documentation
     - [ ] References and bibtex
     - [ ] Acknowledgements
-    - [ ] Create own github repo
+    - [x] Create own github repo
     - [ ] Figure/table/notation check through
     - [ ] Appendices?
     - [ ] Final formatting

@@ -4,12 +4,9 @@ import itertools
 import math
 from matplotlib import pyplot as plt
 import os
+from mpl_toolkits.mplot3d import Axes3D
 
 
-# f(x) = c + m0*x + sum((mi - m_i-1)(x - ai))
-# need to add x = (x)_+ - (-x)_+ to first layer!
-
-# make model for the R -> R case
 def make_oned_model(a, m, c):
     """
     Create a model that evaluates a piecewise linear function specified in one dimension.
@@ -45,32 +42,6 @@ def make_oned_model(a, m, c):
     return oned_model
 
 
-a0 = np.array([0,1,2,3])
-m0 = np.array([1,2,4,6,8])
-c0 = 1
-
-make_exact_model(a0, m0, c0)
-exact_model.predict(np.array([0]).reshape(1,1),verbose=0)
-
-# 2D case
-
-# what if we have a_1 to a_r and b_1 to b_s
-# and m_0 to m_r and l_0 to l_s
-
-# we then construct plane gradients
-# m00 ... m0r m11 ... msr
-# where mij = [mi, ls]
-
-# this construction ensures that
-# 1) each grid in (x,y) has a constant gradient i.e. f is linear
-# 2) for fixed i, the x gradient mi is constant and so at the boundaries
-#    between x<= ai and x>ai there are no discontinuities
-
-# we can now moadify the above 1D case so that a and m are 2D arrays
-# containing the points and partial derivatives in each dimension
-
-
-
 def make_nd_model(a, m, c):
     """
     Create a model that evaluates a piecewise linear function specified in d >= 1
@@ -89,37 +60,149 @@ def make_nd_model(a, m, c):
     d = len(m)
     r = sum([np.shape(m_i)[0] for m_i in m])
     inputs = tf.keras.Input(shape=(d))
-    dense1 = tf.keras.layers.Dense(r, activation='relu')(inputs)
+    dense1 = tf.keras.layers.Dense(r+d, activation='relu')(inputs)
     dense2 = tf.keras.layers.Dense(1, activation='linear')(dense1)
     nd_model = tf.keras.Model(inputs=inputs, outputs=dense2, name='nd_model')
     nd_model.compile(loss='binary_crossentropy', metrics=['accuracy'])
 
     # for multiple inputs, use block "diagonal" weights in first layer
     # to handle each input separately
-    w0 = np.zeros((d,r))
+    w0 = np.zeros((d,r+d))
+    b0 = np.zeros(r+d)
     x=0
     y=0
     for i in range(d):
-        y = y + np.shape(m[i])[0]
+        y = y + np.shape(m[i])[0] + 1
         w0[i,x:y] = np.ones(y-x)
+        w0[i,x+1] = -1
+        b0[x:y] = -np.concatenate((np.array([0]*2), a[i]))
         x = x + y
-    b0 = -np.concatenate([np.concatenate((np.array([0]),a_i)) for a_i in a0])
     nd_model.layers[1].set_weights([w0,b0])
 
-    # output of the first dense layer is a list so can just concatenate
-    # the diffs from before
-    w1 = np.concatenate([np.diff(m_i, prepend=0) for m_i in m]).reshape(r,1)
+    # concatenate the weights for each dimension
+    w1 = np.zeros(r+d)
+    x=0
+    y=0
+    for i in range(d):
+        y = y + np.shape(m[i])[0] + 1
+        w1[x:y] = np.concatenate((np.array([m[i][0]]), np.diff(m[i], prepend=0)))
+        w1[x+1] = -w1[x+1]
+        x = x + y
+    w1 = w1.reshape(r+d,1)
     b1 = np.array([c])
     nd_model.layers[2].set_weights([w1,b1])
     return nd_model
 
-    
+
+def eval_oned_np(x, M):
+    """
+    Create a wrapper for a one dimensional model M so that its input and output are floats.
+
+    x : input float.
+    M : model created by make_oned_model.
+    """
+
+    xt = tf.convert_to_tensor(np.array(x).reshape(1,1))
+    yt = M.predict(xt, verbose=0)
+    return float(yt)
 
 
-a0 = [np.array([0,1,2,3]), np.array([0,1,2])]
-m0 = [np.array([1,4,9,16,25]), np.array([1,4,9,16])]
-c0 = 1
+def plot_oned_model(M, xlim=(-10,10), pt=1000):
+    """
+    Create a plot from the one dimensional model M.
+
+    M : model created by make_oned_model.
+    xlim : the limits between which to plot the graph y=M(x).
+    pt : number of points to evaluate on within the range.
+    """
+    plt.rcParams["figure.figsize"] = [7.50, 3.50]
+    plt.rcParams["figure.autolayout"] = True
+
+    x = np.linspace(xlim[0], xlim[1], pt)
+    xt = tf.convert_to_tensor(x.reshape(pt,1))
+    y = M.predict(xt, verbose=0)
+    plt.plot(x, y)
+    plt.show()
 
 
-make_exact_nd_model(a0, m0, c0)
-exact_nd_model.predict(np.array([2,2]).reshape(1,2),verbose=0)
+def plot_twod_model(M, x1lim=(-10,10), x2lim=(-10,10), pt=100):
+    """
+    Create a plot from the two dimensional model M.
+
+    M : two dimensional model created by make_nd_model.
+    x1lim : the limits between which to plot the graph y=M(x).
+    x2lim : the limits between which to plot the graph y=M(x).
+    pt : number of points to evaluate on within the range.
+    """
+
+    x1 = np.linspace(x1lim[0], x1lim[1], pt)
+    x2 = np.linspace(x2lim[0], x2lim[1], pt)
+    X1, X2 = np.meshgrid(x1, x2)
+    x = np.dstack((X1,X2)).reshape(-1,2)
+
+    xt = tf.convert_to_tensor(x)
+    y = M.predict(xt, verbose=0)
+
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    ax.plot_surface(X1, X2, y.reshape(pt,pt))
+    plt.xlabel('x_1')
+    plt.ylabel('x_2')
+    plt.show()
+
+
+def make_approx_model(N, r=0.01):
+    """
+    Initialize a model that can be trained to approximate an exact one dimensional model.
+    It will use the same architecture as the given model N.
+
+    N : exact model created by make_oned_model.
+    r : the learning rate for Adam.
+    """
+
+    M = tf.keras.models.clone_model(N)
+    opt = tf.keras.optimizers.Adam(learning_rate=r)
+    M._name = 'approx_model'
+    M.compile(loss="mean_squared_error", optimizer=opt, metrics=["mean_squared_error"])
+    return M
+
+
+def train_approx_model(M, N, xlim=(-10,10), samples=1000, epochs=100):
+    """
+    Train the model M using samples generated from the model N.
+
+    M : approx model initialized using make_approx_model.
+    N : exact model created by make_oned_model.
+    """
+
+    x = np.linspace(xlim[0], xlim[1], samples)
+    xt = tf.convert_to_tensor(x.reshape(samples,1))
+    y = N.predict(xt, verbose=0)
+    data = tf.data.Dataset.from_tensors((xt, y))
+    M.fit(data, epochs=epochs, verbose=0)
+    return M
+
+
+def plot_trained_model(M, N, xlim=(-10,10), pt=1000):
+    """
+    Create a plot to compare a trained one dimensional model M with an
+    exact one dimensional model N.
+
+    M : approx model.
+    N : exact model created by make_oned_model.
+    xlim : the limits between which to plot the graph y=M(x).
+    pt : number of points to evaluate on within the range.
+    """
+    plt.rcParams["figure.figsize"] = [7.50, 3.50]
+    plt.rcParams["figure.autolayout"] = True
+
+    x = np.linspace(xlim[0], xlim[1], pt)
+    xt = tf.convert_to_tensor(x.reshape(pt,1))
+
+    yM = M.predict(xt, verbose=0)
+    yN = N.predict(xt, verbose=0)
+
+    plt.plot(x, yN, label='Exact model')
+    plt.plot(x, yM, label='Trained model', color='red')
+    plt.legend()
+    plt.show()
