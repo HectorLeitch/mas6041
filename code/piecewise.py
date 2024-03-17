@@ -107,7 +107,7 @@ def eval_oned_np(x, M):
     return float(yt)
 
 
-def plot_oned_model(M, xlim=(-10,10), pt=1000):
+def plot_oned_model(M, xlim=(-10,10), pt=1000, title=None):
     """
     Create a plot from the one dimensional model M.
 
@@ -122,10 +122,15 @@ def plot_oned_model(M, xlim=(-10,10), pt=1000):
     xt = tf.convert_to_tensor(x.reshape(pt,1))
     y = M.predict(xt, verbose=0)
     plt.plot(x, y)
+
+    if title != None: plt.title(title)
+    plt.xlabel('x')
+    plt.ylabel('f(x)')
+
     plt.show()
 
 
-def plot_twod_model(M, x1lim=(-10,10), x2lim=(-10,10), pt=100):
+def plot_twod_model(M, x1lim=(-10,10), x2lim=(-10,10), pt=100, title=None):
     """
     Create a plot from the two dimensional model M.
 
@@ -146,8 +151,11 @@ def plot_twod_model(M, x1lim=(-10,10), x2lim=(-10,10), pt=100):
     fig = plt.figure()
     ax = Axes3D(fig)
     ax.plot_surface(X1, X2, y.reshape(pt,pt))
+
+    if title != None: plt.title(title)
     plt.xlabel('x_1')
     plt.ylabel('x_2')
+
     plt.show()
 
 
@@ -183,7 +191,7 @@ def train_approx_model(M, N, xlim=(-10,10), samples=1000, epochs=100):
     return M
 
 
-def plot_trained_model(M, N, xlim=(-10,10), pt=1000):
+def plot_trained_model(M, N, xlim=(-10,10), pt=1000, title=None):
     """
     Create a plot to compare a trained one dimensional model M with an
     exact one dimensional model N.
@@ -204,5 +212,10 @@ def plot_trained_model(M, N, xlim=(-10,10), pt=1000):
 
     plt.plot(x, yN, label='Exact model')
     plt.plot(x, yM, label='Trained model', color='red')
+
+    if title != None: plt.title(title)
+    plt.xlabel('x')
+    plt.ylabel('f(x)')
     plt.legend()
+
     plt.show()
