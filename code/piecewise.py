@@ -153,8 +153,9 @@ def plot_twod_model(M, x1lim=(-10,10), x2lim=(-10,10), pt=100, title=None):
     ax.plot_surface(X1, X2, y.reshape(pt,pt))
 
     if title != None: plt.title(title)
-    plt.xlabel('x_1')
-    plt.ylabel('x_2')
+    plt.xlabel('$x_1$')
+    plt.ylabel('$x_2$')
+    ax.set_zlabel('f($x_1,x_2$)')
 
     plt.show()
 
@@ -187,7 +188,9 @@ def train_approx_model(M, N, xlim=(-10,10), samples=1000, epochs=100):
     xt = tf.convert_to_tensor(x.reshape(samples,1))
     y = N.predict(xt, verbose=0)
     data = tf.data.Dataset.from_tensors((xt, y))
-    M.fit(data, epochs=epochs, verbose=0)
+
+    callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=20, verbose=0)
+    M.fit(data, epochs=epochs, callbacks=[callback], verbose=0)
     return M
 
 

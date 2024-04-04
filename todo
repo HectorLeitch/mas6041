@@ -1,20 +1,18 @@
 To do list:
 
 1. [ ][0/17] Python code:
-    - [ ][1/2] Boolean:
-        - [ ] Experiment with a deeper network
+    - [x][1/1] Boolean:
         - [x] Create Jupyter notebook
-    - [ ][0/2] Piecewise:
-        - [ ] Create test script
-        - [ ] Create Jupyter notebook
+    - [x][2/2] Piecewise:
+        - [x] Create test script
+        - [x] Create Jupyter notebook
     - [ ][0/2] Zeroone:
         - [ ] Create full model
+        - [ ] Create initialised model
         - [ ] Create Jupyter notebook
-    - [ ][0/4] Letters:
-        - [ ] Finish multi-word model
-        - [ ] Implement Neil's improved model
-        - [ ] Add efficieny ideas for I()
-        - [ ] Create Jupyter notebook
+    - [x][2/2] Letters:
+        - [x] Add improved model
+        - [x] Create Jupyter notebook
     - [ ][0/3] Os and X:
         - [ ] Create test script
         - [ ] Create output results
@@ -27,24 +25,24 @@ To do list:
 
 2. [ ][4/19] Overleaf project:
     - [ ][0/2] Lay summary:
-        - [ ] Rewrite to be more lay
+        - [x] Rewrite to be more lay
         - [ ] Add second half describing what we did
     - [x][3/3] Introduction:
         - [x] Add activation functions
         - [x] Add description of training
         - [x] Add summary of dissertation
-    - [ ][1/2] Boolean:
+    - [x][2/2] Boolean:
         - [x] Switch to layer notation
-        - [ ] Reference Jupyter notebook
+        - [x] Reference Jupyter notebook
     - [ ][1/2] Piecewise:
         - [x] Clean writeup
         - [ ] Reference Jupyter notebook
     - [ ][0/2] Zeroone:
         - [ ] Clean writeup
         - [ ] Reference Jupyter notebook
-    - [ ][0/2] Letters:
-        - [ ] Clean writeup
-        - [ ] Reference Jupyter notebook
+    - [x][2/2] Letters:
+        - [x] Clean writeup
+        - [x] Reference Jupyter notebook
     - [ ][0/2] Os and Xs:
         - [ ] Clean writeup
         - [ ] Reference Jupyter notebook
@@ -56,9 +54,9 @@ To do list:
         - [ ] Results tables
         - [ ] Introduction graphs
 
-3. [ ][1/11] General cleanup:
+3. [ ][2/11] General cleanup:
     - [ ] Remove template text
-    - [ ] Replace \mathbf with \pmb
+    - [x] Replace \mathbf with \pmb
     - [ ] Adjust formatting for any lists to look good
     - [ ] Overall chapter structure
     - [ ] Code function documentation
