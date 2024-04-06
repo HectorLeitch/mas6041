@@ -6,10 +6,9 @@ To do list:
     - [x][2/2] Piecewise:
         - [x] Create test script
         - [x] Create Jupyter notebook
-    - [ ][0/2] Zeroone:
-        - [ ] Create full model
-        - [ ] Create initialised model
-        - [ ] Create Jupyter notebook
+    - [x][2/2] Zeroone:
+        - [x] Create full model
+        - [x] Create Jupyter notebook
     - [x][2/2] Letters:
         - [x] Add improved model
         - [x] Create Jupyter notebook
@@ -34,15 +33,16 @@ To do list:
     - [x][2/2] Boolean:
         - [x] Switch to layer notation
         - [x] Reference Jupyter notebook
-    - [ ][1/2] Piecewise:
-        - [x] Clean writeup
-        - [ ] Reference Jupyter notebook
-    - [ ][0/2] Zeroone:
-        - [ ] Clean writeup
-        - [ ] Reference Jupyter notebook
-    - [x][2/2] Letters:
+    - [x][2/2] Piecewise:
         - [x] Clean writeup
         - [x] Reference Jupyter notebook
+    - [x][2/2] Zeroone:
+        - [x] Clean writeup
+        - [x] Reference Jupyter notebook
+    - [ ][2/3] Letters:
+        - [x] Clean writeup
+        - [x] Reference Jupyter notebook
+        - [ ] Don't forget the weights we haven't added
     - [ ][0/2] Os and Xs:
         - [ ] Clean writeup
         - [ ] Reference Jupyter notebook
