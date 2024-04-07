@@ -17,7 +17,7 @@ import matplotlib.lines
 import os
 from itertools import combinations
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+#os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 src_dir = os.path.dirname(os.path.realpath(__file__))
 models_dir = os.path.realpath(os.path.join(src_dir,'../models'))
@@ -98,31 +98,6 @@ def plays(pq, player=0):
     return n
 
 
-# Use manual NN to replicate plays()
-def plays_model():
-    global plays_model
-    inputs = tf.keras.Input(shape=(9, 2))
-    reshape = tf.keras.layers.Reshape((18,))(inputs)
-    outputs = tf.keras.layers.Dense(9, activation='linear')(reshape)
-    plays_model = tf.keras.Model(inputs=inputs, outputs=outputs, name="plays_model")
-
-    w0 = np.zeros([18,9])
-    w0[(0,2,4,6,8,10,12,14,16),:] -= np.eye(9) # player 0 moves
-    w0[(1,3,5,7,9,11,13,15,17),:] -= np.eye(9) # player 1 moves
-
-    b0 = np.ones(9) # adjust from {-1, 0} to {0, 1}
-
-    plays_model.layers[2].set_weights([w0, b0])
-    return plays_model
-
-plays_model()
-pq = empty_board.copy()
-plays_model.predict(pq.reshape(1, 9, 2))
-add_o(pq, 1)
-plays_model.predict(pq.reshape(1, 9, 2))
-add_x(pq, 4)
-plays_model.predict(pq.reshape(1, 9, 2))
-
 
 # near_wins(pq, i) is the list of positions at which player i could 
 # play and thereby immediately win.
@@ -192,13 +167,13 @@ def suggest_move(pq, player):
     if len(f) > 0: return f[0] # take fork if poss
     g = forks(qp0)
     if len(g) == 1: return g[0] # prevent fork if poss
-    for i in g:
+    for i in plays(pq0): # edit to all plays
         pq1 = pq0 + eee[i, 0]
         qp1 = swap(pq1)
-        if len(near_wins(pq1)) > 0 and len(forks(qp1)) > 0:
+        if len(near_wins(pq1)) > 0 and len(forks(qp1)) == 0: #edit to == 0
             return i # play somewhere that creates a near win and doesnt give opportunity to fork
     # edit: if going first can start in corner instead of middle
-    if sum(sum(pq0)) == 0: return 0
+    if sum(sum(pq0)) == 0: return np.random.choice(np.array([0,2,6,8]))
     if pq0[4, 0] == 0 and pq0[4, 1] == 0: return 4 # play middle if poss
     for i in [0, 2, 6, 8]:
         if pq0[i, 0] == 0 and pq0[i, 1] == 0 and pq0[8-i, 1] == 1: # play opposite corner to opponent
@@ -245,8 +220,7 @@ def input_move(pq, player=0):
 #
 # all_dataset packages all_states and all_states_suggestions in
 # a tensorflow dataset (shuffled and batched)
-def make_all_states():
-    global states, all_states, all_states_suggestions, all_dataset
+def make_all_states(SHUFFLE_SIZE=100, BATCH_SIZE=32):
     all_states = []
     states = [[empty_board.copy()]]
     for i in range(1,9):
@@ -270,10 +244,10 @@ def make_all_states():
     all_dataset = tf.data.Dataset.from_tensor_slices((all_states, all_states_suggestions))
     all_dataset = all_dataset.shuffle(SHUFFLE_SIZE).batch(BATCH_SIZE)
 
-    return all_states
+    return states, all_states, all_states_suggestions, all_dataset
 
 
-make_all_states()
+
 
 # HL: to access first pair of (state, suggestion) use
 # all_dataset = tf.data.Dataset.from_tensor_slices((all_states, all_states_suggestions))
@@ -288,8 +262,7 @@ make_all_states()
 # crosses.  The model takes a game state as input and produces
 # a probability vector of length 9 as output.
 
-def make_model(p=20, q=20, r=0.001):
-    global model
+def make_simple_model(p=20, q=20, r=0.001):
     inputs = tf.keras.Input(shape=(9, 2))
     reshape = tf.keras.layers.Reshape((18,))(inputs)
     hidden0 = tf.keras.layers.Dense(p, activation='relu')(reshape)
@@ -301,38 +274,53 @@ def make_model(p=20, q=20, r=0.001):
     return model
 
 
-def save_model():
-    l = model.layers
-    p = l[3].input_shape[1]
-    q = l[4].input_shape[1]
-    model_dir = os.path.join(models_dir, 'ox_model_' + repr(p) + '_' + repr(q))
-    model.save(model_dir)
+def make_res_model(p=10, q=10, r=0.01, residual_train=True):
+    inputs = tf.keras.Input(shape=(9, 2))
+    reshape = tf.keras.layers.Reshape((18,))(inputs)
+    hidden0 = tf.keras.layers.Dense(p, activation='relu')(reshape)
+    hidden1 = tf.keras.layers.Dense(q, activation='relu')(hidden0)
+    outputs1 = tf.keras.layers.Dense(9, activation='linear')(hidden1)
+    outputs2 = tf.keras.layers.Dense(9, activation='linear', trainable=residual_train)(reshape)
+    resout = tf.keras.layers.Add()([outputs1,outputs2])
+    resout = tf.keras.layers.Activation("softmax")(resout)
+    res_model = tf.keras.Model(inputs=inputs, outputs=resout, name="model")
+    opt = tf.keras.optimizers.Adam(learning_rate=r)
+    res_model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
+    
+    w1 = np.zeros((18,9))
+    for i in range(9):
+        w1[2*i,i] = 1
+        w1[2*i+1,i] = 1
+    w1 = -20*w1
+    b1 = np.zeros(9)
+    if not(residual_train):
+        res_model.layers[5].set_weights([w1,b1])
+    
+    return res_model
 
 
-def load_model(p=20, q=20):
-    model_dir = os.path.join(models_dir, 'ox_model_' + repr(p) + '_' + repr(q))
-    model = tf.keras.models.load_model(model_dir)
-    return model
-
-
-
-
-
+# This function trains the model to replicate the behaviour of the
+# suggest_move() function
+def train_model_suggestions(M,epochs,batch_size=32):
+    states, all_states, all_states_suggestions, all_dataset = make_all_states(SHUFFLE_SIZE=100, BATCH_SIZE=batch_size)
+    callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=20, verbose=0)
+    return M.fit(all_dataset, epochs=epochs, callbacks=[callback], verbose=0)
 
 # This function applies the model to a game state pq to generate
 # a probability distribution on the board positions, and then 
 # selects a position randomly in accordance with that distribution.
 # (If the model is not well-trained then the move may be illegal, 
 # resulting in an immediate loss.)
-def model_move(pq, player=0):
+def model_move(M, pq, player=0, argmax=False):
     if player == 0:
         pq0 = pq.copy()
     else:
         pq0 = swap(pq.copy())
-    prob = model.predict(pq0.reshape(1, 9, 2), verbose=0)[0]
+    prob = M.predict(pq0.reshape(1, 9, 2), verbose=0)[0]
     choices = range(9)
-    #return np.random.choice(choices, p=prob)
-    return choices[np.argmax(prob)]
+    if argmax: return choices[np.argmax(prob)]
+    else: return np.random.choice(choices, p=prob)
+    
 
 
 # This function displays the given game state as an image 
@@ -432,109 +420,6 @@ def play_game(player_o, player_x, return_moves=False):
         return pq, winner, illegal
 
 
-# edit: remove step()
-
-# edit: remove play game monitored
-
-
-# The function legal_loss(pq, prob) expects pq to be a game state and
-# prob to be a probability vector of length 9, interpreted as the 
-# probabilities of playing in positions 0,..,8.  It returns the 
-# probability of playing an illegal move, i.e. of playing in a 
-# position that is already occupied.
-def legal_loss(pq, prob):
-    oo = tf.constant([[1],[1]], dtype=tf.float32)
-    return tf.reshape(tf.linalg.matmul(tf.reshape(prob,[-1,1,9]),tf.linalg.matmul(pq,oo)),[-1])
-
-
-def use_legal_loss(on=True):
-    global model
-    if on:
-        model.compile(loss=legal_loss, optimizer=model.optimizer)
-    else:
-        model.compile(loss="categorical_crossentropy", optimizer=model.optimizer)
-
-
-def set_learning_rate(r=0.01):
-    global model
-    tf.keras.backend.set_value(model.optimizer.learning_rate, r)
-
-
-# This function trains the model so that it only plays legal moves.
-# It does not attempt to ensure that the moves are sensible.
-def train_model_rules():
-    global model
-    if model is None:
-        make_model()
-    use_legal_loss(True)
-    model.compile(loss=legal_loss, optimizer=model.optimizer)
-    st = tf.constant(all_states, dtype=tf.float32)
-    model.fit(st, st, epochs=20)
-    use_legal_loss(False)
-
-
-# This function trains the model to replicate the behaviour of the
-# suggest_move() function
-def train_model_suggestions():
-    global model
-    if model is None:
-        make_model()
-    use_legal_loss(False)
-    model.fit(all_dataset, epochs=EPOCHS, verbose=0)
-
-
-# edit: remove reinforcement model
-
-
-# Add residual connectionsto try and help the model learn legal moves only
-def make_res_model(p=10, q=10, r=0.01):
-    global res_model
-    inputs = tf.keras.Input(shape=(9, 2))
-    reshape = tf.keras.layers.Reshape((18,))(inputs)
-    hidden0 = tf.keras.layers.Dense(p, activation='relu')(reshape)
-    hidden1 = tf.keras.layers.Dense(q, activation='relu')(hidden0)
-    outputs1 = tf.keras.layers.Dense(9, activation='linear')(hidden1)
-    #outputs2 = tf.keras.layers.Dense(9, activation='linear')(reshape)
-    outputs2 = tf.keras.layers.Dense(9, activation='linear', trainable=False)(reshape)
-    resout = tf.keras.layers.Add()([outputs1,outputs2])
-    resout = tf.keras.layers.Activation("softmax")(resout)
-    res_model = tf.keras.Model(inputs=inputs, outputs=resout, name="model")
-    opt = tf.keras.optimizers.Adam(learning_rate=r)
-    res_model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
-    
-    w1 = np.zeros((18,9))
-    for i in range(9):
-        w1[2*i,i] = 1
-        w1[2*i+1,i] = 1
-    w1 = -20*w1
-    b1 = np.zeros(9)
-    res_model.layers[5].set_weights([w1,b1])
-    
-    return res_model
-
-make_res_model()
-
-def train_res_model():
-    global res_model
-    if res_model is None:
-        make_res_model()
-    res_model.fit(all_dataset, epochs=EPOCHS, verbose=0)
-
-train_res_model()
-
-# Copy model_move() using softmax
-# Hopefully softmax can work similar to argmax with the residual connections
-def res_model_move(pq, player=0):
-    if player == 0:
-        pq0 = pq.copy()
-    else:
-        pq0 = swap(pq.copy())
-    prob = res_model.predict(pq0.reshape(1, 9, 2), verbose=0)[0]
-    choices = range(9)
-    return np.random.choice(choices, p=prob)
-
-# Seems we can easily get equal or better performance with p,q smaller
-
 
 # Now try using the same structure but set the residual connections first
 # and prevent them from being trained
@@ -557,7 +442,7 @@ def play_match(player_o, player_x, bestof=100):
 #make_model(p=20, q=20, r=0.01)
 #train_model_suggestions()
 #play_match(model_move, suggest_move)
-scores, illegals = play_match(res_model_move, suggest_move)
+#scores, illegals = play_match(res_model_move, suggest_move)
 
 
 # here we can achieve 99% performance with res_model using
