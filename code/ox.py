@@ -15,12 +15,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.lines
 import os
+import pandas as pd
 from itertools import combinations
 
-#os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
-src_dir = os.path.dirname(os.path.realpath(__file__))
-models_dir = os.path.realpath(os.path.join(src_dir,'../models'))
 
 model = None
 
@@ -187,24 +185,6 @@ def suggest_move(pq, player):
 # this can be easily beaten going first by [0, 8, 6, 7]
 
 
-# This function displays the game state pq and prompts the user
-# to enter a move for the specified player.
-def input_move(pq, player=0):
-    if player == 0:
-        s = 'O'
-    else:
-        s = 'X'
-    show_board_ascii(pq)
-    prompt = 'Enter position (0-8) for next ' + s + ': '
-    i = input(prompt)
-    try:
-        i = int(i)
-    except ValueError:
-        return None
-    if i < 0 or i > 8:
-        i = None
-    return i
-
 
 # This function sets various global variables.
 # all_states is the list of all game states that could be seen 
@@ -274,7 +254,7 @@ def make_simple_model(p=20, q=20, r=0.001):
     return model
 
 
-def make_res_model(p=10, q=10, r=0.01, residual_train=True):
+def make_res_model(p=10, q=10, r=0.01, residual_train=True, fix_pen=20):
     inputs = tf.keras.Input(shape=(9, 2))
     reshape = tf.keras.layers.Reshape((18,))(inputs)
     hidden0 = tf.keras.layers.Dense(p, activation='relu')(reshape)
@@ -291,9 +271,9 @@ def make_res_model(p=10, q=10, r=0.01, residual_train=True):
     for i in range(9):
         w1[2*i,i] = 1
         w1[2*i+1,i] = 1
-    w1 = -20*w1
+    w1 = -fix_pen*w1
     b1 = np.zeros(9)
-    if not(residual_train):
+    if not residual_train:
         res_model.layers[5].set_weights([w1,b1])
     
     return res_model
@@ -301,7 +281,7 @@ def make_res_model(p=10, q=10, r=0.01, residual_train=True):
 
 # This function trains the model to replicate the behaviour of the
 # suggest_move() function
-def train_model_suggestions(M,epochs,batch_size=32):
+def train_model_suggestions(M, epochs, batch_size=32):
     states, all_states, all_states_suggestions, all_dataset = make_all_states(SHUFFLE_SIZE=100, BATCH_SIZE=batch_size)
     callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=20, verbose=0)
     return M.fit(all_dataset, epochs=epochs, callbacks=[callback], verbose=0)
@@ -451,41 +431,41 @@ def play_match(player_o, player_x, bestof=100):
 # or letting the network train the residual connections and
 # results in approx -20 to -40 weights on diagonals and not much else
 
+def test_one_model(M, no_games=100):
+    def test_model_move(pq, player=0, argmax=False):
+        return model_move(M=M, pq=pq, player=0, argmax=False)
 
-def test_pq():
-    scores = []
-    illegals = []
-    for size in range(10, 30):
-        make_model(p=size, q=size, r=0.01)
-        train_model_suggestions()
-        score, illegal = play_match(suggest_move,model_move)
-        scores.append(score)
-        illegals.append(illegal)
-        print("p,q=" + str(size))
+    scores, illegals = play_match(test_model_move, suggest_move, bestof=no_games)
+    print(f'Without argmax, versus perfect player:')
+    print(f'Draws: {scores[0]}, \nWins: {scores[1]}, \nLosses: {scores[2]}, \nLosses due to illegal moves: {illegals[0]}')
 
-    return scores, illegals
+    def test_model_move_argmax(pq, player=0, argmax=True):
+        return model_move(M=M, pq=pq, player=0, argmax=True)
 
-#scores, illegals = test_pq()
-#print(scores)
-#print(illegals)
+    scores, illegals = play_match(test_model_move_argmax, suggest_move, bestof=no_games)
+    print(f'\nWith argmax, versus perfect player:')
+    print(f'Draws: {scores[0]}, \nWins: {scores[1]}, \nLosses: {scores[2]}, \nLosses due to illegal moves: {illegals[0]}')
 
-# below p,q=20 it starts to reliably defend properly
-# below p,q=15 it starts to struggle to not lose due to an illegal move
+    scores, illegals = play_match(test_model_move_argmax, random_move, bestof=no_games)
+    print(f'\nWith argmax, versus random player:')
+    print(f'Draws: {scores[0]}, \nWins: {scores[1]}, \nLosses: {scores[2]}, \nLosses due to illegal moves: {illegals[0]}')
 
-######################################################################
 
-# make_model()
-# train_model_rules()
 
-# train_model_suggestions()
+def test_models(models):
+    results_data = []
+    for M in models:
+        model_result = []
+        def test_model_move(pq, player=0, argmax=False):
+            return model_move(M=M, pq=pq, player=0, argmax=False)
+        score, illegal = play_match(test_model_move, suggest_move)
+        model_result.append(score + illegal)
+        def test_model_move_argmax(pq, player=0, argmax=True):
+            return model_move(M=M, pq=pq, player=0, argmax=True)
+        score, illegal = play_match(test_model_move_argmax, suggest_move)
+        model_result.append(score + illegal)
+        score, illegal = play_match(test_model_move_argmax, random_move)
+        model_result.append(score + illegal)
+        results_data.append(model_result)
 
-# while True:
-#    rr, gg, mm, bb = play_game_monitored()
-#    print([rr,mm])
-#    show_board_ascii(board_from_moves(mm))
-
-# make_Q_model()
-
-# train_Q_once(5,5,5,0.5)
-
-# make_model()
+    return results_data
