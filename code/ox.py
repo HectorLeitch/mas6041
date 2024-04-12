@@ -1,14 +1,3 @@
-# Here we build a model to play noughts and crosses
-# Eventually we hope to do this by Reinforcement Learning, but
-# code for that does not work properly yet.  Instead we have
-# coded the usual algorithm and trained a model to mimic that.
-
-# We effectively treat the board as a linear array of 9 cells.
-# Each game position is represented as an array of shape (9, 2)
-# with a 1 in position (i, 0) if there is an O in position i,
-# and a 1 in position (i, 1) if there is an X in position i.
-# Player 0 plays Os and player 1 plays Xs.
-
 from re import I
 import tensorflow as tf
 import numpy as np
@@ -18,20 +7,9 @@ import os
 import pandas as pd
 from itertools import combinations
 
-
-
-model = None
-
-BATCH_SIZE = 64
-SHUFFLE_SIZE = 100
-EPOCHS = 500
-
+# Global variables to help create the perfect player in suggest_move()
 board = range(9)
 
-# The array below encodes the rules which determine when a 
-# player has won.  For example, wins[0] has 1s in positions 
-# 0, 3 and 6, indicating that a player has won if they 
-# have counters in positions 0, 3 and 6.
 wins = np.array([
     [1, 0, 0, 1, 0, 0, 1, 0, 0],
     [0, 1, 0, 0, 1, 0, 0, 1, 0],
@@ -43,11 +21,8 @@ wins = np.array([
     [0, 0, 1, 0, 1, 0, 1, 0, 0]
 ])
 
-# ee[i] is the vector of length 9 with a single 1 in position i
-# eee[i, j] is the array of shape (9, 2) with a single 1 in position (i, j)
 ee = np.eye(9)
 eee = np.zeros([9, 2, 9, 2])
-
 
 def make_eee():
     global eee
@@ -55,15 +30,11 @@ def make_eee():
         for j in range(2):
             eee[i, j, i, j] = 1
 
-
 make_eee()
 
-# corners[i] is 1 iff position i is a corner of the board
-# edges[i] is 1 iff position i is the middle of one edge of the board
 corners = np.array([1, 0, 1, 0, 0, 0, 1, 0, 1])
 edges   = np.array([0, 1, 0, 1, 0, 1, 0, 1, 0])
 
-# opposite[i] is the position opposite position i
 opposite = [8, 7, 6, 5, 4, 3, 2, 1, 0]
 
 empty_board = np.zeros([9, 2])
@@ -71,24 +42,24 @@ empty_board = np.zeros([9, 2])
 
 def add_o(pq, i): pq[i, 0] = 1
 
-
 def add_x(pq, i): pq[i, 1] = 1
 
-# has_win(pq, 0) is True if, in the game state described by the 
-# array pq, player 0 has filled a line (and so has won, if the
-# game state was reached by legal play).  has_win(pq, 1) is similar.
-# has_win(pq) = has_win(pq, None) = has_win(pq, 0) or has_win(pq, 1)
+
 def has_win(pq, player=None):
+    """
+    Checks whether a player has won the game in board pq.
+    """
     w = [np.max(np.matmul(wins, pq[:, j])) >= 3 for j in [0, 1]]
     if player is None:
         return w[0] or w[1]
     else:
         return w[player]
 
-# plays(pq) is the list of positions which are empty (in the game 
-# state described by the array pq), and so are available to the 
-# next player.
+
 def plays(pq, player=0):
+    """
+    Returns the available moves to a player in board pq.
+    """
     n = []
     for i in range(9):
         if pq[i, 0] == 0 and pq[i, 1] == 0:
@@ -96,10 +67,10 @@ def plays(pq, player=0):
     return n
 
 
-
-# near_wins(pq, i) is the list of positions at which player i could 
-# play and thereby immediately win.
 def near_wins(pq, player=0):
+    """
+    Returns the moves a player can play to immediately win in board pq.
+    """
     n = []
     for i in range(9):
         if pq[i, 0] == 0 and pq[i, 1] == 0 and has_win(pq + eee[i, player], player):
@@ -107,9 +78,10 @@ def near_wins(pq, player=0):
     return n
 
 
-# forks(pq, i) is the list of positions at which player i could 
-# play and thereby create two near-wins.
 def forks(pq, player=0):
+    """
+    Returns the moves a player can play to create two near-wins in board pq.
+    """
     f = []
     for i in range(9):
         if pq[i, player] == 0 and pq[i, 1-player] == 0 and \
@@ -118,37 +90,24 @@ def forks(pq, player=0):
     return f
 
 
-# swap(pq) represents the same game state as pq but with the Os and Xs exchanged
 def swap(pq):
     return np.array([[pq[i, 1-j] for j in range(2)] for i in range(9)])
 
 
-# This function expects a list moves = [moves_o, moves_x], where 
-# moves_o and moves_x are disjoint lists of distinct board positions.
-# It returns the corresponding game state pq as an array of shape (9, 2)
-def board_from_moves(moves):
-    s = empty_board.copy()
-    for i in [0,1]:
-        for j in moves[i]:
-            s += eee[j, i]
-    return s
-
-
-# random_move(pq, i) returns a randomly selected legal move for
-# player i in game state pq.  The return value is just an integer
-# (or None if the board is already full).
 def random_move(pq, player=0):
+    """
+    Returns a random move out of the available positions in board pq.
+    """
     if has_win(pq) or len(plays(pq)) == 0:
         return None
     return np.random.choice(plays(pq, player))
 
 
-# suggest_move(pq, i) returns a suggested move for player i in 
-# game state pq.  The suggestions are optimal in the sense that 
-# a win or draw is guaranteed if the suggestions are followed
-# throughout the game.  The function returns None if the board 
-# is already full.
 def suggest_move(pq, player):
+    """
+    Returns the best move for the player in board pq. This has been modified to
+    start in a random corner if given an empty board.
+    """
     if player == 0:
         pq0 = pq.copy()
         qp0 = swap(pq0)
@@ -158,49 +117,33 @@ def suggest_move(pq, player):
     if has_win(pq0) or len(plays(pq0)) == 0:
         return None
     n = near_wins(pq0)
-    if len(n) > 0: return n[0] # win if poss
+    if len(n) > 0: return n[0]
     m = near_wins(qp0)
-    if len(m) > 0: return m[0] # not lose if poss
+    if len(m) > 0: return m[0]
     f = forks(pq0)
-    if len(f) > 0: return f[0] # take fork if poss
+    if len(f) > 0: return f[0]
     g = forks(qp0)
-    if len(g) == 1: return g[0] # prevent fork if poss
-    for i in plays(pq0): # edit to all plays
+    if len(g) == 1: return g[0]
+    for i in plays(pq0):
         pq1 = pq0 + eee[i, 0]
         qp1 = swap(pq1)
-        if len(near_wins(pq1)) > 0 and len(forks(qp1)) == 0: #edit to == 0
-            return i # play somewhere that creates a near win and doesnt give opportunity to fork
-    # edit: if going first can start in corner instead of middle
-    if sum(sum(pq0)) == 0: return np.random.choice(np.array([0,2,6,8]))
-    if pq0[4, 0] == 0 and pq0[4, 1] == 0: return 4 # play middle if poss
-    for i in [0, 2, 6, 8]:
-        if pq0[i, 0] == 0 and pq0[i, 1] == 0 and pq0[8-i, 1] == 1: # play opposite corner to opponent
+        if len(near_wins(pq1)) > 0 and len(forks(qp1)) == 0:
             return i
-    for i in [0, 2, 6, 8, 1, 3, 5, 7]: # otherwise prioritise corners -> sides
+    if sum(sum(pq0)) == 0: return np.random.choice(np.array([0,2,6,8]))
+    if pq0[4, 0] == 0 and pq0[4, 1] == 0: return 4
+    for i in [0, 2, 6, 8]:
+        if pq0[i, 0] == 0 and pq0[i, 1] == 0 and pq0[8-i, 1] == 1:
+            return i
+    for i in [0, 2, 6, 8, 1, 3, 5, 7]:
         if pq0[i, 0] == 0 and pq0[i, 1] == 0:
             return i
     return None
 
 
-# this can be easily beaten going first by [0, 8, 6, 7]
-
-
-
-# This function sets various global variables.
-# all_states is the list of all game states that could be seen 
-# by player 0 in legal play (with either player 0 or player 1 
-# starting the game).  It only includes the 4519 states in which 
-# player 0 is required to respond; states are excluded if either 
-# player has already won.  
-#
-# all_states_suggestions is the corresponding list of suggested
-# moves, with one-hot encoding.  In other words, if the suggestion
-# for state all_states[i] is to play in position j, then 
-# all_states_suggestions[i] is the basis vector ee[j]
-#
-# all_dataset packages all_states and all_states_suggestions in
-# a tensorflow dataset (shuffled and batched)
 def make_all_states(SHUFFLE_SIZE=100, BATCH_SIZE=32):
+    """
+    Creates the set of all board states and the corresponding best move.
+    """
     all_states = []
     states = [[empty_board.copy()]]
     for i in range(1,9):
@@ -227,20 +170,6 @@ def make_all_states(SHUFFLE_SIZE=100, BATCH_SIZE=32):
     return states, all_states, all_states_suggestions, all_dataset
 
 
-
-
-# HL: to access first pair of (state, suggestion) use
-# all_dataset = tf.data.Dataset.from_tensor_slices((all_states, all_states_suggestions))
-# list(all_dataset.as_numpy_iterator())[0]
-
-
-# edit: remove Q model
-
-
-######################################################################
-# This section attempts to train a model to play noughts and 
-# crosses.  The model takes a game state as input and produces
-# a probability vector of length 9 as output.
 
 def make_simple_model(p=20, q=20, r=0.001):
     inputs = tf.keras.Input(shape=(9, 2))
