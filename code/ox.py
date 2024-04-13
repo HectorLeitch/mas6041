@@ -172,6 +172,16 @@ def make_all_states(SHUFFLE_SIZE=100, BATCH_SIZE=32):
 
 
 def make_simple_model(p=20, q=20, r=0.001):
+    """
+    Create a model consisting of hidden dense layers of size p and q. The
+    model is compiled with the Adam optimizer with fixed learning rate r.
+    
+    The output is a vector of length 9 with "probabilities" that sum to 1.
+
+    p : positive integer
+    q : positive integer
+    r : float
+    """
     inputs = tf.keras.Input(shape=(9, 2))
     reshape = tf.keras.layers.Reshape((18,))(inputs)
     hidden0 = tf.keras.layers.Dense(p, activation='relu')(reshape)
@@ -184,6 +194,22 @@ def make_simple_model(p=20, q=20, r=0.001):
 
 
 def make_res_model(p=10, q=10, r=0.01, residual_train=True, fix_pen=20):
+    """
+    Create a model consisting of hidden dense layers of size p and q, and
+    residual connections from the input layer to the output layer. The
+    model is compiled with the Adam optimizer with fixed learning rate r.
+    The residual_train parameter allows the model to train the residual
+    weights and bias. In this is false, the fix_pen sets the penalty weight
+    for the untrainable residual connections.
+    
+    The output is a vector of length 9 with "probabilities" that sum to 1.
+
+    p : positive integer
+    q : positive integer
+    r : float
+    residual_train : boolean
+    fix_pen: float
+    """
     inputs = tf.keras.Input(shape=(9, 2))
     reshape = tf.keras.layers.Reshape((18,))(inputs)
     hidden0 = tf.keras.layers.Dense(p, activation='relu')(reshape)
@@ -211,16 +237,30 @@ def make_res_model(p=10, q=10, r=0.01, residual_train=True, fix_pen=20):
 # This function trains the model to replicate the behaviour of the
 # suggest_move() function
 def train_model_suggestions(M, epochs, batch_size=32):
+    """
+    Trains a model for the given number of epochs and batch size, based
+    on the behaviour of suggest_move(). Returns the trained model history.
+
+    M : untrained model
+    epochs : positive integer
+    batch_size : positive integer
+    """
     states, all_states, all_states_suggestions, all_dataset = make_all_states(SHUFFLE_SIZE=100, BATCH_SIZE=batch_size)
     callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=20, verbose=0)
     return M.fit(all_dataset, epochs=epochs, callbacks=[callback], verbose=0)
 
-# This function applies the model to a game state pq to generate
-# a probability distribution on the board positions, and then 
-# selects a position randomly in accordance with that distribution.
-# (If the model is not well-trained then the move may be illegal, 
-# resulting in an immediate loss.)
+
 def model_move(M, pq, player=0, argmax=False):
+    """
+    Performs a move based on the model M and board pq. The argmax
+    toggle allows us to switch the softmax activation for an argmax
+    activation.
+
+    M : model
+    pq : board
+    player : 0 or 1
+    argmax : boolean
+    """
     if player == 0:
         pq0 = pq.copy()
     else:
@@ -232,9 +272,10 @@ def model_move(M, pq, player=0, argmax=False):
     
 
 
-# This function displays the given game state as an image 
-# using matplotlib
 def show_board(pq, winner=None):
+    """
+    Plots a board pq.
+    """
     col_o = 'red'
     col_x = 'blue'
     if winner == 0: col_x = 'lightblue'
@@ -257,38 +298,21 @@ def show_board(pq, winner=None):
                 ax.add_line(matplotlib.lines.Line2D([i + 0.2, i + 0.8], [j + 0.8, j + 0.2], color=col_x))
 
 
-# This function prints an ASCII art representation of the specified game state
-def show_board_ascii(pq, winner=None):
-    sym_o = 'O'
-    sym_x = 'X'
-    if winner == 0: sym_x = 'x'
-    if winner == 1: sym_o = 'o'
-    s = '---\n'
-    for j in range(3):
-        for i in range(3):
-            k = i+3*(2-j)
-            t = '#'
-            if pq[k, 0] == 1: t = sym_o
-            if pq[k, 1] == 1: t = sym_x
-            s = s + t
-        s = s + '\n'
-    s = s + '---'
-    print(s)
 
-
-# This function plays a game.
-# It assumes that player_o and player_x are functions like
-# random_move, suggest_move, input_move and model_move:
-# they should accept a game state and player index, and 
-# return a board position.  By default play_game() returns
-# the final board position and the index of the winner 
-# (0 for O, 1 for X).  If the return_moves argument is true
-# it also returns a list moves = [moves_o, moves_x] 
-# specifying the moves taken in order.
 def play_game(player_o, player_x, return_moves=False):
+    """
+    Plays a game between two functions that take a board as input
+    and return a position from 0 to 8.
+
+    Returns the winner and whether any illegal mvoe occurred, and the
+    history of moves if return_moves is True.
+
+    player_o : function
+    player_x : function
+    return_moves : boolean
+    """
     pq = empty_board.copy()
     winner = None
-    # edit: track illegal moves
     illegal = None
     moves_o = []
     moves_x = []
@@ -334,6 +358,17 @@ def play_game(player_o, player_x, return_moves=False):
 # and prevent them from being trained
 
 def play_match(player_o, player_x, bestof=100):
+    """
+    Plays a match of bestof games between two functions that take a
+    board as input and return a position from 0 to 8.
+
+    Returns the overall scores and the number of illegal moves each
+    player made.
+
+    player_o : function
+    player_x : function
+    bestof : positive integer
+    """
     scores = [0, 0, 0]
     illegals = [0, 0]
 
@@ -344,23 +379,20 @@ def play_match(player_o, player_x, bestof=100):
         else: scores[0] += 1
         if illegal == 0: illegals[0] += 1
         elif illegal == 1: illegals[1] += 1
-        #print("Game " + str(game+1) + "/" + str(bestof)+ " done.")
 
     return scores, illegals
 
-#make_model(p=20, q=20, r=0.01)
-#train_model_suggestions()
-#play_match(model_move, suggest_move)
-#scores, illegals = play_match(res_model_move, suggest_move)
-
-
-# here we can achieve 99% performance with res_model using
-# fixed residual connections and p=q=10 for the rest of the network
-
-# or letting the network train the residual connections and
-# results in approx -20 to -40 weights on diagonals and not much else
 
 def test_one_model(M, no_games=100):
+    """
+    Tests a single model against the perfect player using suggest_move(),
+    and a random player using random_move(). The model is tested using
+    both softmax and argmax activations against the perfect player, and
+    argamx activation against the random player. The results are printed.
+
+    M : model
+    no_games : positive integer
+    """
     def test_model_move(pq, player=0, argmax=False):
         return model_move(M=M, pq=pq, player=0, argmax=False)
 
@@ -382,6 +414,16 @@ def test_one_model(M, no_games=100):
 
 
 def test_models(models):
+    """
+    Tests a collection of models against the perfect player using suggest_move(),
+    and a random player using random_move(). The models are tested using both 
+    softmax and argmax activations against the perfect player, and argamx 
+    activation against the random player. The matches are fixed to 100 games.
+
+    Returns the overall results in a list.
+
+    models : list of models
+    """
     results_data = []
     for M in models:
         model_result = []
