@@ -1,6 +1,6 @@
 To do list:
 
-1. [ ][0/17] Python code:
+1. [ ][13/17] Python code:
     - [x][1/1] Boolean:
         - [x] Create Jupyter notebook
     - [x][2/2] Piecewise:
@@ -12,10 +12,10 @@ To do list:
     - [x][2/2] Letters:
         - [x] Add improved model
         - [x] Create Jupyter notebook
-    - [ ][0/3] Os and X:
-        - [ ] Create test script
-        - [ ] Create output results
-        - [ ] Create Jupyter notebook
+    - [x][3/3] Os and X:
+        - [x] Create test script
+        - [x] Create output results
+        - [x] Create Jupyter notebook
     - [ ][0/4] Digit recognition:
         - [ ] Create test script
         - [ ] Create output results
@@ -43,9 +43,9 @@ To do list:
         - [x] Clean writeup
         - [x] Reference Jupyter notebook
         - [ ] Don't forget the weights we haven't added
-    - [ ][0/2] Os and Xs:
-        - [ ] Clean writeup
-        - [ ] Reference Jupyter notebook
+    - [x][2/2] Os and Xs:
+        - [x] Clean writeup
+        - [x] Reference Jupyter notebook
     - [ ][0/2] Digits:
         - [ ] Clean writeup
         - [ ] Reference Jupyter notebook
@@ -58,11 +58,28 @@ To do list:
     - [ ] Remove template text
     - [x] Replace \mathbf with \pmb
     - [ ] Adjust formatting for any lists to look good
-    - [ ] Overall chapter structure
+    - [x] Overall chapter structure
     - [ ] Code function documentation
     - [ ] References and bibtex
-    - [ ] Acknowledgements
+    - [x] Acknowledgements
     - [x] Create own github repo
     - [ ] Figure/table/notation check through
     - [ ] Appendices?
     - [ ] Final formatting
+    - [ ] Check figure refs are working correctly
+
+4. [ ][] Feedback:
+    - [ ] Chapter 2 include 0/1 in trivial case
+    - [ ] Re-write coefficients using inc/exc
+    - [ ] Chapter 4 rewrite/organize
+    - [ ] Look into tensorflow version
+    - [ ] Tabulate model layers prior to weights def
+    - [ ] See if RNN can be replaced by dense
+    - [ ] Add names to layers
+    - [ ] Clean up abbreviations
+    - [ ] Avoid maths in first 2/3 words
+    - [ ] Figure captions
+    - [ ] Add conclusion to intro
+    - [ ] Add some comments about implementing code
+    - [ ] Clean up f()
+    - [ ] Ethics page

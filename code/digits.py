@@ -1,7 +1,3 @@
-# Here we build a handcrafted model that identifies digits
-# when drawn as 6x6 images in a standardised way
-
-# exec(open('python/digits.py').read())
 import matplotlib.colors
 import tensorflow as tf
 import numpy as np
@@ -18,6 +14,7 @@ exact_model = None
 approx_model = None
 approx_model_b = None
 
+# As we are dealing with 6x6 images, set N=6 globally
 N = 6
 rng = np.random.default_rng()
 BATCH_SIZE = 64
@@ -26,6 +23,8 @@ EPOCHS = 20
 VALIDATION_SPLIT = 0.1
 
 
+
+# ---------- Functions for drawing digits ----------
 def show_digit(A):
     plt.imshow(A, cmap='Greys')
     plt.axis("off")
@@ -282,24 +281,23 @@ def random_image(d=None):
     return IM[d][i]
 
 
+# ---------------------------------------------------
+
 def make_exact_model():
-    global exact_model
     inputs = tf.keras.Input(shape=(N, N))
     reshape = tf.keras.layers.Reshape((N, N, 1))(inputs)
-    features = tf.keras.layers.Conv2D(12, [3, 3], [1, 1], 'same', activation='relu')(reshape)
-    counts = tf.keras.layers.Conv2D(12, [N, N], [1, 1], 'valid', activation='relu')(features)
+    features = tf.keras.layers.Conv2D(10, [3, 3], [1, 1], 'same', activation='relu')(reshape)
+    counts = tf.keras.layers.Conv2D(17, [N, N], [1, 1], 'valid', activation='relu')(features)
     outputs = tf.keras.layers.Dense(10, activation='relu')(counts)
     exact_model = tf.keras.Model(inputs=inputs, outputs=outputs, name="exact_model")
     
     # first convolution layer
     # these weights are the 12 kernels in exact.pdf (in correct order)
     weights2 = [
-            [[ 0, -1,  0], [ 1,  1,  1], [ 0, -1,  0]],
-            [[ 0, -1,  0], [-1,  1,  1], [ 0, -1,  0]],
-            [[ 0, -1,  0], [ 1,  1, -1], [ 0, -1,  0]],
-            [[ 0,  1,  0], [-1,  1, -1], [ 0,  1,  0]],
-            [[ 0, -1,  0], [-1,  1, -1], [ 0,  1,  0]],
-            [[ 0,  1,  0], [-1,  1, -1], [ 0, -1,  0]],
+            [[-1, -1,  0], [-1,  1,  1], [-1, -1,  0]],
+            [[ 0, -1, -1], [ 1,  1, -1], [ 0, -1, -1]],
+            [[-1, -1, -1], [-1,  1, -1], [ 0,  1,  0]],
+            [[ 0,  1,  0], [-1,  1, -1], [-1, -1, -1]],
             [[-1, -1,  0], [-1,  1,  1], [ 0,  1, -1]],
             [[ 0, -1, -1], [ 1,  1, -1], [-1,  1,  0]],
             [[ 0,  1, -1], [-1,  1,  1], [-1, -1,  0]],
@@ -307,37 +305,53 @@ def make_exact_model():
             [[-1,  1, -1], [-1,  1,  1], [-1,  1, -1]],
             [[-1,  1, -1], [ 1,  1, -1], [-1,  1, -1]]
     ]
-    bias2 = [-2, -1, -1, -2, -1, -1, -2, -2, -2, -2, -3, -3]
-    weights2 = np.array(weights2).transpose((1, 2, 0)).reshape((3, 3, 1, 12))
+    bias2 = [-1, -1, -1, -1, -2, -2, -2, -2, -3, -3]
+    weights2 = np.array(weights2).transpose((1, 2, 0)).reshape((3, 3, 1, 10))
     bias2 = np.array(bias2)
     exact_model.layers[2].set_weights([weights2, bias2])
 
     # second convolution layer
     # here it is size 12 because it skips 0 and 3 but adds 2 indicator parts,
     # not because there are exactly 12 kernels in the first conv layer
-    weights3 = np.zeros((N, N, 12, 12))
+    weights3 = np.zeros((N, N, 10, 17))
     for j in range(N):
         for k in range(N):
-            # to sum the counts essentially use an identity matrix of weights
-            # however miss out 0 and 3 from counts as they are not needed
-            weights3[j, k, 1, 0] = 1
-            weights3[j, k, 2, 1] = 1
-            for p in range(8):
-                weights3[j, k, p + 4, p + 2] = 1
+            for p in range(10):
+                weights3[j, k, p, p] = 1
 
             # edit: move the below assignments in one tab as they do not use p
 
             # the [,10] and [,11] kernels form an indicator variable (ex 6.1)
             # I(6 and 8 are above 7 and 9)
+            # j is the height
+            # I(h4+h6 > h5+h7) -> 2
+            weights3[j, k, 4, 10] =  j
+            weights3[j, k, 5, 10] = -j
             weights3[j, k, 6, 10] =  j
             weights3[j, k, 7, 10] = -j
-            weights3[j, k, 8, 10] =  j
-            weights3[j, k, 9, 10] = -j
+            weights3[j, k, 4, 11] =  j
+            weights3[j, k, 5, 11] = -j
             weights3[j, k, 6, 11] =  j
             weights3[j, k, 7, 11] = -j
-            weights3[j, k, 8, 11] =  j
-            weights3[j, k, 9, 11] = -j
-    bias3 = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1])
+
+            # I(h4+h6 > h5+h7) -> 5
+            weights3[j, k, 4, 12] = -j
+            weights3[j, k, 5, 12] =  j
+            weights3[j, k, 6, 12] = -j
+            weights3[j, k, 7, 12] =  j
+            weights3[j, k, 4, 13] = -j
+            weights3[j, k, 5, 13] =  j
+            weights3[j, k, 6, 13] = -j
+            weights3[j, k, 7, 13] =  j
+
+            # I(w4 = w6)
+            weights3[j, k, 4, 14] =  k
+            weights3[j, k, 6, 14] = -k
+            weights3[j, k, 4, 15] =  k
+            weights3[j, k, 6, 15] = -k
+            weights3[j, k, 4, 16] =  k
+            weights3[j, k, 6, 16] = -k
+    bias3 = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, -1, 1, 0, -1])
 
     exact_model.layers[3].set_weights([weights3, bias3])
 
@@ -345,26 +359,27 @@ def make_exact_model():
     # evaluates the counts against the expected numbers for each digit
     # 2 and 5 use the indicator parts
     weights4 = np.array([
-        [-1, -1, -1, -1,  1,  1,  1,  1, -1, -1,  0,  0],
-        [-1, -1,  1,  1, -1, -1, -1, -1, -1, -1,  0,  0],
-        [ 1,  1, -1, -1,  1,  1,  1,  1, -1, -1,  1, -1],
-        [ 1, -1, -1, -1, -1,  1, -1,  1, -1,  1,  0,  0],
-        [-1, -1,  1,  1, -1, -1,  1, -1, -1,  1,  0,  0],
-        [ 1,  1, -1, -1,  1,  1,  1,  1, -1, -1, -1,  1],
-        [-1, -1,  1, -1, -1,  1,  1,  1,  1, -1,  0,  0],
-        [ 1, -1, -1,  1, -1,  1, -1, -1, -1, -1,  0,  0],
-        [-1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  0,  0],
-        [-1, -1, -1,  1,  1,  1,  1, -1, -1,  1,  0,  0]
+        [-1, -1, -1, -1,  1,  1,  1,  1, -1, -1,  0,  0,  0,  0,  0,  0,  0],
+        [-1, -1,  1,  1, -1, -1, -1, -1, -1, -1,  0,  0,  0,  0,  0,  0,  0],
+        [ 1,  1, -1, -1,  1,  1,  1,  1, -1, -1,  1, -1,  0,  0,  1, -2,  1],
+        [ 1, -1, -1, -1, -1,  1, -1,  1, -1,  1,  0,  0,  0,  0,  0,  0,  0],
+        [-1, -1,  1,  1, -1, -1,  1, -1, -1,  1,  0,  0,  0,  0,  0,  0,  0],
+        [ 1,  1, -1, -1,  1,  1,  1,  1, -1, -1,  0,  0,  1, -1,  1, -2,  1],
+        [-1, -1,  1, -1, -1,  1,  1,  1,  1, -1,  0,  0,  0,  0,  0,  0,  0],
+        [ 1, -1, -1,  1, -1,  1, -1, -1, -1, -1,  0,  0,  0,  0,  0,  0,  0],
+        [-1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  0,  0,  0,  0,  0,  0,  0],
+        [-1, -1, -1,  1,  1,  1,  1, -1, -1,  1,  0,  0,  0,  0,  0,  0,  0]
     ]).transpose()
-    bias4 = np.array([-3, -1, -6, -5, -4, -5, -4, -2, -5, -4])
+    bias4 = np.array([-3, -1, -7, -5, -4, -6, -4, -2, -5, -4])
     exact_model.layers[4].set_weights([weights4, bias4])
 
     return exact_model
 
 
-def exact_classify(img):
-    p = exact_model.predict(img.reshape(1, N, N))
-    return tf.math.argmax(p[0][0][0]).numpy()
+def model_classify(M, img):
+    p = M.predict(img.reshape(1, N, N), verbose=0)
+    if np.sum(p) == 0: return "Reject"
+    else: return tf.math.argmax(p[0][0][0]).numpy()
 
 
 feature_pos = [
@@ -402,11 +417,9 @@ def show_features(img):
 
 # the perfect model described in exact.pdf
 def make_approx_model(p=3, q=3, r=0.001):
-    global approx_model
     inputs = tf.keras.Input(shape=(N, N))
     reshape = tf.keras.layers.Reshape((N, N, 1))(inputs)
     features = tf.keras.layers.Conv2D(p, [3, 3], [1, 1], 'same', activation='relu')(reshape)
-    # here the counts layer is just functioning like a dense layer
     counts = tf.keras.layers.Conv2D(q, [N, N], [1, 1], 'valid', activation='relu')(features)
     outputs = tf.keras.layers.Dense(10, activation='softmax')(counts)
     approx_model = tf.keras.Model(inputs=inputs, outputs=outputs, name="approx_model")
@@ -416,15 +429,19 @@ def make_approx_model(p=3, q=3, r=0.001):
 
 
 # edit: switch for verbose
-def train_approx_model(v=0):
-    approx_model.fit(all_dataset, epochs=EPOCHS, verbose=v)
+def train_approx_model(M, epochs, batch_size=32, patience=20):
+    all_dataset = tf.data.Dataset.from_tensor_slices((x_all, y_all))
+    all_dataset = all_dataset.shuffle(100).batch(batch_size)
+    if isinstance(patience, int):
+        callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=patience, verbose=0)
+        return M.fit(all_dataset, epochs=epochs, callbacks=[callback], verbose=0)
+    else: return M.fit(all_dataset, epochs=epochs, verbose=0)
 
 
-def check_approx_model():
+def check_model(M):
     z_all = np.argmax(y_all.reshape((-1, 10)), axis=1)
-    z_all_pred = np.argmax(approx_model(x_all).numpy().reshape((-1, 10)), axis=1)
-    #return np.array_equal(z_all, z_all_pred)
-    return sum(z_all != z_all_pred)
+    z_all_pred = np.argmax(M(x_all).numpy().reshape((-1, 10)), axis=1)
+    return sum(z_all == z_all_pred)
 
 
 
@@ -444,11 +461,10 @@ def load_approx_model(p=3, q=3):
 
 
 # shows the trained kernels for the first layer as r, g, b in exact.pdf
-# edit: switch for showing the exact values
-def show_approx_kernels(mat=0):
-    l = approx_model.layers
+def show_kernels(M):
+    l = M.layers
     p = l[3].input_shape[3]
-    w = approx_model.layers[2].get_weights()[0].reshape(3, 3, p).transpose(2, 0, 1)
+    w = M.layers[2].get_weights()[0].reshape(3, 3, p).transpose(2, 0, 1)
     fig = plt.figure(figsize=(2*p-1, 1))
     for i in range(p):
         if p == 3:
@@ -463,7 +479,6 @@ def show_approx_kernels(mat=0):
         ax = fig.add_axes([x, 0.02, 0.96 / (2*p-1), 0.96])
         ax.set_axis_off()
         ax.imshow(w[i], cmap=cm)
-        if mat == 1: print(w[i])
 
 
 # shows the output for the second layer in 3D in exact.pdf
@@ -533,7 +548,7 @@ def make_approx_model_b(p=10, r=0.01):
     approx_model_b.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
     return approx_model_b
 
-
+"""
 # try to find training parameters to get perfect performance
 EPOCHS = 2000
 BATCH_SIZE = 32
@@ -579,6 +594,8 @@ b1 = 1-sum(x1[0:3,].T)
 pca.explained_variance_ratio_.cumsum()
 
 #approx_model.layers[2].set_weights([x2,b1])
+"""
+
 
 def test_sk():
     sk = [1,2,6]
@@ -628,6 +645,8 @@ def test_sk():
     
     plt.show()
 
+
+"""
 test_sk()
 #time series of the loss for plotting etc
 #hist.history['loss']
@@ -643,7 +662,7 @@ from sklearn.linear_model import LinearRegression
 reg = LinearRegression().fit(x,y)
 
 #hist.history['val_accuracy'][np.shape(hist.history['val_accuracy'])[0]-1]
-
+"""
 
 
 # big loop
@@ -701,4 +720,3 @@ def test_all():
     plt.show()
 
 #test_all()
-    
