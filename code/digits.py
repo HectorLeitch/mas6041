@@ -5,23 +5,10 @@ from matplotlib import pyplot as plt
 import os
 from itertools import combinations
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-
-src_dir = os.path.dirname(os.path.realpath(__file__))
-models_dir = os.path.realpath(os.path.join(src_dir,'../models'))
-
-exact_model = None
-approx_model = None
-approx_model_b = None
 
 # As we are dealing with 6x6 images, set N=6 globally
 N = 6
 rng = np.random.default_rng()
-BATCH_SIZE = 64
-SHUFFLE_SIZE = 100
-EPOCHS = 20
-VALIDATION_SPLIT = 0.1
-
 
 
 # ---------- Functions for drawing digits ----------
@@ -29,27 +16,31 @@ def show_digit(A):
     plt.imshow(A, cmap='Greys')
     plt.axis("off")
 
-
-# horizontal line in position j, from i1 to i2
 def hl(A, i1, i2, j):
+    """
+    Horizontal line.
+    """
     for p in range(i1, i2+1):
         A[j, p] = 1
 
-
-# vertical line in position i, from j1 to j2
 def vl(A, i, j1, j2):
+    """
+    Vertical line.
+    """
     for q in range(j1, j2+1):
         A[q, i] = 1
 
-
-# one-hot representation of digit d
 def ee(d):
+    """
+    One-hot representation of d.
+    """
     u = np.zeros(10)
     u[d] = 1
     return u
 
-
-# functions for drawing digits
+"""
+f{d} draws the digit d.
+"""
 def f0(i):
     if not(isinstance(i, list) and len(i) == 4):
         raise ValueError("i is not a list of length 4")
@@ -194,11 +185,11 @@ def f9(i):
     return A
 
 
-# put functions in a list so can call f[0](i) instead of f0(i)
 f = [f0, f1, f2, f3, f4, f5, f6, f7, f8, f9]
 
-# II generates all the possible input configurations for each digit
-# to go into its corresponding f[d]
+"""
+Create the possible images containing a digit.
+"""
 II = [
     [[i0, i1, i2, i3]
      for i0 in range(N-2)
@@ -265,16 +256,15 @@ II = [
      for i4 in range(i3+2, N)]
 ]
 
-
-# IM generates the 6x6 grids for each of the inputs in II
 IM = [[f[d](i) for i in II[d]] for d in range(10)]
 x_all = np.array([img for d in range(10) for img in IM[d]]).astype("float32")
 y_all = np.array([[[ee(d)]] for d in range(10) for img in IM[d]]).astype("float32")
-all_dataset = tf.data.Dataset.from_tensor_slices((x_all, y_all))
-all_dataset = all_dataset.shuffle(SHUFFLE_SIZE).batch(BATCH_SIZE)
 
 
 def random_image(d=None):
+    """
+    Create a random image. The digit d can be specified.
+    """
     if d is None:
         d = rng.integers(10)
     i = rng.integers(len(IM[d]))
@@ -284,15 +274,22 @@ def random_image(d=None):
 # ---------------------------------------------------
 
 def make_exact_model():
+    """
+    Create an exact model that can recognize all digits in IM and reject non-digits.
+    The first layer consists of kernels to recognize each pixel type from 0 to 9.
+    The second layer counts the number of occurrences of each pixel type in the
+    first 10 channels, and then uses 7 channels to create ReLU parts that indicate
+    the relative locations of the corner pixel types if they are present. The output
+    layer determines the digit from this information.
+    """
     inputs = tf.keras.Input(shape=(N, N))
     reshape = tf.keras.layers.Reshape((N, N, 1))(inputs)
     features = tf.keras.layers.Conv2D(10, [3, 3], [1, 1], 'same', activation='relu')(reshape)
     counts = tf.keras.layers.Conv2D(17, [N, N], [1, 1], 'valid', activation='relu')(features)
     outputs = tf.keras.layers.Dense(10, activation='relu')(counts)
     exact_model = tf.keras.Model(inputs=inputs, outputs=outputs, name="exact_model")
-    
-    # first convolution layer
-    # these weights are the 12 kernels in exact.pdf (in correct order)
+
+    # features
     weights2 = [
             [[-1, -1,  0], [-1,  1,  1], [-1, -1,  0]],
             [[ 0, -1, -1], [ 1,  1, -1], [ 0, -1, -1]],
@@ -310,21 +307,13 @@ def make_exact_model():
     bias2 = np.array(bias2)
     exact_model.layers[2].set_weights([weights2, bias2])
 
-    # second convolution layer
-    # here it is size 12 because it skips 0 and 3 but adds 2 indicator parts,
-    # not because there are exactly 12 kernels in the first conv layer
+    # counts
     weights3 = np.zeros((N, N, 10, 17))
     for j in range(N):
         for k in range(N):
             for p in range(10):
                 weights3[j, k, p, p] = 1
 
-            # edit: move the below assignments in one tab as they do not use p
-
-            # the [,10] and [,11] kernels form an indicator variable (ex 6.1)
-            # I(6 and 8 are above 7 and 9)
-            # j is the height
-            # I(h4+h6 > h5+h7) -> 2
             weights3[j, k, 4, 10] =  j
             weights3[j, k, 5, 10] = -j
             weights3[j, k, 6, 10] =  j
@@ -334,7 +323,6 @@ def make_exact_model():
             weights3[j, k, 6, 11] =  j
             weights3[j, k, 7, 11] = -j
 
-            # I(h4+h6 > h5+h7) -> 5
             weights3[j, k, 4, 12] = -j
             weights3[j, k, 5, 12] =  j
             weights3[j, k, 6, 12] = -j
@@ -344,7 +332,6 @@ def make_exact_model():
             weights3[j, k, 6, 13] = -j
             weights3[j, k, 7, 13] =  j
 
-            # I(w4 = w6)
             weights3[j, k, 4, 14] =  k
             weights3[j, k, 6, 14] = -k
             weights3[j, k, 4, 15] =  k
@@ -352,12 +339,9 @@ def make_exact_model():
             weights3[j, k, 4, 16] =  k
             weights3[j, k, 6, 16] = -k
     bias3 = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, -1, 1, 0, -1])
-
     exact_model.layers[3].set_weights([weights3, bias3])
 
-    # dense layer
-    # evaluates the counts against the expected numbers for each digit
-    # 2 and 5 use the indicator parts
+    # output
     weights4 = np.array([
         [-1, -1, -1, -1,  1,  1,  1,  1, -1, -1,  0,  0,  0,  0,  0,  0,  0],
         [-1, -1,  1,  1, -1, -1, -1, -1, -1, -1,  0,  0,  0,  0,  0,  0,  0],
@@ -377,46 +361,27 @@ def make_exact_model():
 
 
 def model_classify(M, img):
+    """
+    Returns the classification of an image using an existing model M.
+
+    M : model
+    img : input image
+    """
     p = M.predict(img.reshape(1, N, N), verbose=0)
     if np.sum(p) == 0: return "Reject"
     else: return tf.math.argmax(p[0][0][0]).numpy()
 
 
-feature_pos = [
-    [0.4, 0.8, 0.2, 0.2],
-    [0.2, 0.8, 0.2, 0.2],
-    [0.6, 0.8, 0.2, 0.2],
-    [0.0, 0.4, 0.2, 0.2],
-    [0.0, 0.6, 0.2, 0.2],
-    [0.0, 0.2, 0.2, 0.2],
-    [0.3, 0.2, 0.2, 0.2],
-    [0.5, 0.2, 0.2, 0.2],
-    [0.3, 0.0, 0.2, 0.2],
-    [0.5, 0.0, 0.2, 0.2],
-    [0.0, 0.8, 0.2, 0.2],
-    [0.8, 0.8, 0.2, 0.2]
-]
-
-
-# creates the greyscale diagram of kernels for the pixel types in exact.pdf
-def show_features(img):
-    l = exact_model.layers
-    f = l[2](l[1](l[0](img.reshape((1, N, N)))))[0].numpy()
-    fig = plt.figure(figsize=(8, 8))
-    for i in range(12):
-        p = feature_pos[i]
-        g = 0.02
-        p = [p[0]+g, p[1]+g, p[2]-2*g, p[3]-2*g]
-        ax = fig.add_axes(p)
-        ax.set_axis_off()
-        ax.imshow(f[:, :, i], cmap='Greys')
-    ax = fig.add_axes([0.3, 0.4, 0.4, 0.4])
-    ax.set_axis_off()
-    ax.imshow(img, cmap='Greys')
-
-
-# the perfect model described in exact.pdf
 def make_approx_model(p=3, q=3, r=0.001):
+    """
+    Creates an approximate model with the same layers as the exact model but p
+    channels in the first layer and q channels in the second layer. r is the
+    learning rate which is assigned at model compilation.
+
+    p : positive integer
+    q : positive integer
+    r : float
+    """
     inputs = tf.keras.Input(shape=(N, N))
     reshape = tf.keras.layers.Reshape((N, N, 1))(inputs)
     features = tf.keras.layers.Conv2D(p, [3, 3], [1, 1], 'same', activation='relu')(reshape)
@@ -428,8 +393,16 @@ def make_approx_model(p=3, q=3, r=0.001):
     return approx_model
 
 
-# edit: switch for verbose
 def train_approx_model(M, epochs, batch_size=32, patience=20):
+    """
+    Trains an approximate model M using the x_all and y_all global objects. The training
+    parameters other than the learning rate can be adjusted.
+
+    M : approximate model
+    epochs : positive integer
+    batch_size : positive integer
+    patience : positive integer
+    """
     all_dataset = tf.data.Dataset.from_tensor_slices((x_all, y_all))
     all_dataset = all_dataset.shuffle(100).batch(batch_size)
     if isinstance(patience, int):
@@ -439,29 +412,24 @@ def train_approx_model(M, epochs, batch_size=32, patience=20):
 
 
 def check_model(M):
+    """
+    Checks how many of the possible input images containing a digit the
+    model M can classify correctly.
+
+    M : model
+    """
     z_all = np.argmax(y_all.reshape((-1, 10)), axis=1)
     z_all_pred = np.argmax(M(x_all).numpy().reshape((-1, 10)), axis=1)
     return sum(z_all == z_all_pred)
 
 
-
-def save_approx_model():
-    l = approx_model.layers
-    p = l[3].input_shape[3]
-    q = l[4].input_shape[3]
-    model_dir = os.path.join(models_dir, 'digits_model_' + repr(p) + '_' + repr(q))
-    approx_model.save(model_dir)
-
-
-def load_approx_model(p=3, q=3):
-    global approx_model
-    model_dir = os.path.join(models_dir, 'digits_model_' + repr(p) + '_' + repr(q))
-    approx_model = tf.keras.models.load_model(model_dir)
-    return approx_model
-
-
-# shows the trained kernels for the first layer as r, g, b in exact.pdf
 def show_kernels(M):
+    """
+    Shows the kernels of the first layer for a model M. Uses RGB if there are
+    3 channels.
+
+    M : model
+    """
     l = M.layers
     p = l[3].input_shape[3]
     w = M.layers[2].get_weights()[0].reshape(3, 3, p).transpose(2, 0, 1)
@@ -481,242 +449,68 @@ def show_kernels(M):
         ax.imshow(w[i], cmap=cm)
 
 
-# shows the output for the second layer in 3D in exact.pdf
-def show_approx_embedding():
-    cols = ["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:purple",
-            "tab:brown", "tab:pink", "tab:gray", "tab:olive", "tab:cyan"]
-    fig = plt.figure(figsize=(8, 8))
-    ax = plt.axes(projection='3d')
-    l = approx_model.layers
-    for d in range(10):
-        x = l[3](l[2](l[1](l[0](IM[d])))).numpy().reshape(-1, 3)
-        ax.scatter3D(x[:, 0], x[:, 1], x[:, 2], c=cols[d])
+def make_approx_model_b(p=3, q=3, r=0.001):
+    """
+    An alternative to make_approx_model() that was not used but verifies that the behaviour
+    is consistent when flattening the feature map and using a dense layer.
 
-
-def show_approx_features(img):
-    l = approx_model.layers
-    f = l[2](l[1](l[0](img.reshape((1, N, N)))))[0].numpy()
-    p = l[3].input_shape[3]
-    fig = plt.figure(figsize=(8, 8))
-    for i in range(p):
-        x = 0.5 - 0.05 * p + 0.1 * i + 0.002
-        ax = fig.add_axes([x, 0.002, 0.096, 0.096])
-        ax.set_axis_off()
-        ax.imshow(f[:, :, i], cmap='Greys')
-    ax = fig.add_axes([0.1, 0.2, 0.8, 0.8])
-    ax.set_axis_off()
-    ax.imshow(img, cmap='Greys')
-
-
-def show_approx_features_alt(img):
-    l = approx_model.layers
-    f = tf.math.sigmoid(l[2](l[1](l[0](img.reshape((1, N, N))))))[0].numpy()
-    fig = plt.figure(figsize=(8, 4))
-    ax1 = fig.add_axes([0.01, 0.02, 0.48, 0.96])
-    ax1.set_axis_off()
-    ax1.imshow(img, cmap='Greys')
-    ax2 = fig.add_axes([0.51, 0.02, 0.48, 0.96])
-    ax2.set_axis_off()
-    ax2.imshow(f)
-
-
-# show output of second conv layer for 5 examples of each digit in exact.pdf
-def show_approx_features_chart():
-    l = approx_model.layers
-    fig = plt.figure(figsize=(8, 8))
-    for d in range(10):
-        for i in range(5):
-            img = random_image(d)
-            f = tf.math.sigmoid(l[2](l[1](l[0](img.reshape((1, N, N))))))[0].numpy()
-            ax1 = fig.add_axes([0.1 * (2 * i) + 0.001, 0.1 * (9-d) + 0.01, 0.098, 0.098])
-            ax1.set_axis_off()
-            ax1.imshow(img, cmap='Greys')
-            ax2 = fig.add_axes([0.1 * (2 * i + 1) + 0.001, 0.1 * (9-d) + 0.01, 0.098, 0.098])
-            ax2.set_axis_off()
-            ax2.imshow(f)
-
-
-def make_approx_model_b(p=10, r=0.01):
-    global approx_model_b
+    p : positive integer
+    q : positive integer
+    r : float
+    """
     inputs = tf.keras.Input(shape=(N, N))
-    reshape = tf.keras.layers.Reshape((N * N,))(inputs)
-    hidden = tf.keras.layers.Dense(p)(reshape)
-    outputs0 = tf.keras.layers.Dense(10, activation='softmax')(hidden)
-    outputs = tf.keras.layers.Reshape((1, 1, 10))(outputs0)
-    approx_model_b = tf.keras.Model(inputs=inputs, outputs=outputs, name="approx_model_b")
+    reshape = tf.keras.layers.Reshape((N, N, 1))(inputs)
+    features = tf.keras.layers.Conv2D(p, [3, 3], [1, 1], 'same', activation='relu')(reshape)
+    flatten = tf.keras.layers.Flatten()(features)
+    counts = tf.keras.layers.Dense(q, activation='relu')(flatten)
+    outputs = tf.keras.layers.Dense(10, activation='softmax')(counts)
+    reshape_out = tf.keras.layers.Reshape((1,1,10))(outputs)
+    approx_model = tf.keras.Model(inputs=inputs, outputs=reshape_out, name="approx_model")
     opt = tf.keras.optimizers.Adam(learning_rate=r)
-    approx_model_b.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
-    return approx_model_b
-
-"""
-# try to find training parameters to get perfect performance
-EPOCHS = 2000
-BATCH_SIZE = 32
-r_test = 0.002
-all_dataset = tf.data.Dataset.from_tensor_slices((x_all, y_all))
-all_dataset = all_dataset.shuffle(SHUFFLE_SIZE).batch(BATCH_SIZE)
-make_approx_model(r=r_test)
-#train_approx_model()
-#check_approx_model()
-#show_approx_kernels()
-
-weights1 = [[[ 0, -1,  0], [ 1,  1,  1], [ 0, -1,  0]],
-            [[ 0, -1,  0], [-1,  1,  1], [ 0, -1,  0]],
-            [[ 0, -1,  0], [ 1,  1, -1], [ 0, -1,  0]],
-            [[ 0,  1,  0], [-1,  1, -1], [ 0,  1,  0]],
-            [[ 0, -1,  0], [-1,  1, -1], [ 0,  1,  0]],
-            [[ 0,  1,  0], [-1,  1, -1], [ 0, -1,  0]],
-            [[-1, -1,  0], [-1,  1,  1], [ 0,  1, -1]],
-            [[ 0, -1, -1], [ 1,  1, -1], [-1,  1,  0]],
-            [[ 0,  1, -1], [-1,  1,  1], [-1, -1,  0]],
-            [[-1,  1,  0], [ 1,  1, -1], [ 0, -1, -1]],
-            [[-1,  1, -1], [-1,  1,  1], [-1,  1, -1]],
-            [[-1,  1, -1], [ 1,  1, -1], [-1,  1, -1]]]
-bias1 = [-2, -1, -1, -2, -1, -1, -2, -2, -2, -2, -3, -3]
-
-sk = [1,2,10]
-weights2 = np.array(weights1)[sk,:].transpose((1, 2, 0)).reshape((3, 3, 1, 3))
-bias2 = np.array(bias1)[sk]
-#make_approx_model(r=r_test)
-#approx_model.layers[2].set_weights([weights2,bias2])
-#show_approx_kernels()
+    approx_model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
+    return approx_model
 
 
+def test_starting_kernel(sk, r, epochs, batch_size, patience):
+    """
+    Creates and approximate model and trains it with the first layer kernels
+    initialized to be the kernels for pixel types in the list sk. Returns the
+    final model and the training history.
 
+    sk : list of 3 integers from 0 to 9
+    r : float
+    epochs : positive integer
+    batch_size : positive integer
+    patience : positive integer
+    """
+    M_exact = make_exact_model()
+    w_exact = M_exact.layers[2].get_weights()[0][:,:,:,sk]
+    b_exact = M_exact.layers[2].get_weights()[1][sk]
 
-from sklearn.decomposition import PCA
-x = np.reshape(weights1, (12,9))
-np.linalg.matrix_rank(x)
-pca = PCA(n_components=6).fit(x)
-x1 = np.round(pca.components_, 8)
-x2 = x1[0:3,].reshape((3, 3, 1, 3))
-b1 = 1-sum(x1[0:3,].T)
-pca.explained_variance_ratio_.cumsum()
+    M = make_approx_model(p=3, q=3, r=r)
+    M.layers[2].set_weights([w_exact,b_exact])
 
-#approx_model.layers[2].set_weights([x2,b1])
-"""
+    hist = train_approx_model(M=M, epochs=epochs, batch_size=batch_size, patience=patience)
 
-
-def test_sk():
-    sk = [1,2,6]
-    callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=20, verbose=0)
-    weights1 = [[[ 0, -1,  0], [ 1,  1,  1], [ 0, -1,  0]],
-            [[ 0, -1,  0], [-1,  1,  1], [ 0, -1,  0]],
-            [[ 0, -1,  0], [ 1,  1, -1], [ 0, -1,  0]],
-            [[ 0,  1,  0], [-1,  1, -1], [ 0,  1,  0]],
-            [[ 0, -1,  0], [-1,  1, -1], [ 0,  1,  0]],
-            [[ 0,  1,  0], [-1,  1, -1], [ 0, -1,  0]],
-            [[-1, -1,  0], [-1,  1,  1], [ 0,  1, -1]],
-            [[ 0, -1, -1], [ 1,  1, -1], [-1,  1,  0]],
-            [[ 0,  1, -1], [-1,  1,  1], [-1, -1,  0]],
-            [[-1,  1,  0], [ 1,  1, -1], [ 0, -1, -1]],
-            [[-1,  1, -1], [-1,  1,  1], [-1,  1, -1]],
-            [[-1,  1, -1], [ 1,  1, -1], [-1,  1, -1]]]
-    bias1 = [-2, -1, -1, -2, -1, -1, -2, -2, -2, -2, -3, -3]
-    weights2 = np.array(weights1)[sk,:].transpose((1, 2, 0)).reshape((3, 3, 1, 3))
-    bias2 = np.array(bias1)[sk]
-
-    for i in range(5):
-        make_approx_model(r=r_test)        
-        approx_model.layers[2].set_weights([weights2,bias2])
-        hist = approx_model.fit(all_dataset,
-                                epochs=EPOCHS,
-                                verbose=0,
-                                callbacks=[callback],
-                                validation_data=(x_all, y_all),
-                                validation_batch_size=np.shape(y_all)[0])
-        print(check_approx_model())
-        print(np.shape(hist.history['loss']))
-        #show_approx_kernels(mat=0)
-        plt.plot(hist.history['val_loss'], label=repr(sk), color='blue')
-
-    for j in range(5):
-        make_approx_model(r=r_test)
-        hist = approx_model.fit(all_dataset,
-                                epochs=EPOCHS,
-                                verbose=0,
-                                callbacks=[callback],
-                                validation_data=(x_all, y_all),
-                                validation_batch_size=np.shape(y_all)[0])
-        print(check_approx_model())
-        print(np.shape(hist.history['loss']))
-        #show_approx_kernels(mat=0)
-        plt.plot(hist.history['val_loss'], label='random', color='green')
-    
-    plt.show()
-
-
-"""
-test_sk()
-#time series of the loss for plotting etc
-#hist.history['loss']
-
-x = np.reshape(weights1, (12,9)).T
-y = np.reshape(approx_model.layers[2].get_weights()[0], (3,9)).T
-
-x0 = np.delete(x,(0,3,10,11),1)
-y0 = y[:,0]
-
-from sklearn.linear_model import LinearRegression
-
-reg = LinearRegression().fit(x,y)
-
-#hist.history['val_accuracy'][np.shape(hist.history['val_accuracy'])[0]-1]
-"""
-
-
-# big loop
-
-
-#np.array([combo for combo in combinations(range(12),3)])
-
-#for combo in combinations(lst, 2):  # 2 for pairs, 3 for triplets, etc
-#    print(combo)
+    return M, hist
 
 
 def test_all():
-    global sk_loss_mean, sk_all
-    weights1 = [[[ 0, -1,  0], [ 1,  1,  1], [ 0, -1,  0]],
-                [[ 0, -1,  0], [-1,  1,  1], [ 0, -1,  0]],
-                [[ 0, -1,  0], [ 1,  1, -1], [ 0, -1,  0]],
-                [[ 0,  1,  0], [-1,  1, -1], [ 0,  1,  0]],
-                [[ 0, -1,  0], [-1,  1, -1], [ 0,  1,  0]],
-                [[ 0,  1,  0], [-1,  1, -1], [ 0, -1,  0]],
-                [[-1, -1,  0], [-1,  1,  1], [ 0,  1, -1]],
-                [[ 0, -1, -1], [ 1,  1, -1], [-1,  1,  0]],
-                [[ 0,  1, -1], [-1,  1,  1], [-1, -1,  0]],
-                [[-1,  1,  0], [ 1,  1, -1], [ 0, -1, -1]],
-                [[-1,  1, -1], [-1,  1,  1], [-1,  1, -1]],
-                [[-1,  1, -1], [ 1,  1, -1], [-1,  1, -1]]]
-    bias1 = [-2, -1, -1, -2, -1, -1, -2, -2, -2, -2, -3, -3]
-
-    included = [1,2,4,5,6,7,8,9]
-    sk_all = np.array([combo for combo in combinations(included,3)])
-    #sk_all = [combo for combo in combinations(included,3)]
-    callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=20, verbose=0)
-    sk_loss_mean = []
-
-    for sk in sk_all: #sk = starting kernels
-        weights2 = np.array(weights1)[sk,:].transpose((1, 2, 0)).reshape((3, 3, 1, 3))
-        bias2 = np.array(bias1)[sk]
-        loss_time = []
-
-        for i in range(1):
-            make_approx_model(r=r_test)
-            approx_model.layers[2].set_weights([weights2,bias2])
-            hist = approx_model.fit(all_dataset,
-                                    epochs=EPOCHS,
-                                    verbose=0,
-                                    callbacks=[callback],
-                                    validation_data=(x_all, y_all),
-                                    validation_batch_size=np.shape(y_all)[0])
-            loss_time.append(hist.history['val_loss'])
-    
-        loss_mean = np.mean(np.array(loss_time), axis=0)
-        sk_loss_mean.append(loss_mean)
-        plt.plot(loss_mean, label=repr(sk))
-        print(repr(sk)+" done.")
-
-    plt.show()
-
-#test_all()
+    """
+    Runs test_starting_kernel() for starting kernels of the form [d,d,d] for
+    d in 0 to 9. Uses the fixed training parameters which we found to be
+    suitable. Repeats 5 tests for each starting kernel and returns the mean
+    scores from check_model() and the full list of trained models.
+    """
+    scores = []
+    models = []
+    for i in range(10):
+        score = []
+        model = []
+        for j in range(5):
+            M, hist = test_starting_kernel(sk=[i,i,i], r=0.003, epochs=1000, batch_size=128, patience=40)
+            score.append(check_model(M=M))
+            model.append(M)
+        scores.append(np.mean(np.array(score)))
+        models.append(model)
+    return scores, models
