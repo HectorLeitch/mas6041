@@ -2,7 +2,6 @@ import matplotlib.colors
 import tensorflow as tf
 import numpy as np
 from matplotlib import pyplot as plt
-import os
 from itertools import combinations
 
 

@@ -262,34 +262,30 @@ def make_gru_model(h, w):
     reshape1 = tf.keras.layers.Reshape((h, w, 1))(inputs)
     convlayer = tf.keras.layers.Conv2D(10, [3, 3], [1, 1], padding='valid', activation='relu')(reshape1)
     pooling = tf.keras.layers.MaxPooling2D(pool_size=(h,3), strides=(h,3), padding='same')(convlayer)
-    reshape2 = tf.keras.layers.Reshape((w_g, 10))(pooling)
-    
-    # Recurrent1 converts the convolution output to a sequence of integers
-    recurrent1 = tf.keras.layers.SimpleRNN(1, return_sequences=True, activation='linear')(reshape2)
-    
-    # Dense1 and dense2 produce I(x_t > 0)
-    dense1 = tf.keras.layers.Dense(2, activation='relu')(recurrent1)
-    dense2 = tf.keras.layers.Dense(1, activation='linear')(dense1)
+    reshape2 = tf.keras.layers.Reshape((w_g,10))(pooling)
 
-    # Recurrent2 produces increments at non-zeros
-    recurrent2 = tf.keras.layers.GRU(1, activation='linear', recurrent_activation='linear', return_sequences=True)(dense2)
+    # Dense1 creates (x_t, I(x_t > 0))
+    dense1 = tf.keras.layers.Dense(2,activation='linear')(reshape2)
+
+    # Recurrent1 creates s_t
+    recurrent1 = tf.keras.layers.GRU(1, activation='linear', recurrent_activation='linear', return_sequences=True)(dense1)
     
     # Dense2 and dense3 produce the position indicators p_t
-    dense3 = tf.keras.layers.Dense(3*w_g, activation='relu')(recurrent2)
-    dense4 = tf.keras.layers.Dense(w_g, activation='linear')(dense3)
+    dense2 = tf.keras.layers.Dense(3*w_g, activation='relu')(recurrent1)
+    dense3 = tf.keras.layers.Dense(w_g, activation='linear')(dense2)
 
     # Merge dense layers and compute z using 2 layer bool
-    merge1 = tf.keras.layers.Concatenate(axis=-1)([dense2,dense4])
-    dense5 = tf.keras.layers.Dense(w_g, activation='relu')(merge1)
+    merge1 = tf.keras.layers.Concatenate(axis=-1)([dense1, dense3])
+    dense4 = tf.keras.layers.Dense(w_g, activation='relu')(merge1)
 
-    # Recurrent3 returns the original sequence with the non-zeros first
-    merge2 = tf.keras.layers.Concatenate(axis=-1)([recurrent1,dense5])
-    recurrent3 = tf.keras.layers.GRU(w_g, activation='linear', recurrent_activation='relu', return_sequences=False, reset_after=False)(merge2)
+    # Recurrent2 returns the original sequence with the non-zeros first
+    merge2 = tf.keras.layers.Concatenate(axis=-1)([dense1, dense4])
+    recurrent2 = tf.keras.layers.GRU(w_g, activation='linear', recurrent_activation='relu', return_sequences=False, reset_after=False)(merge2)
     
-    gru_model = tf.keras.Model(inputs=inputs, outputs=recurrent3, name='gru_model')
+    gru_model = tf.keras.Model(inputs=inputs, outputs=recurrent2, name='gru_model')
     gru_model.compile(loss='mean_squared_error', metrics=['accuracy'])
 
-    # Weight asignments
+    # Weight assignments
     w0 = np.array([[-1,  1, -1,  1,  1,  1,  1,  1,  1,  1],
                    [ 1, -1, -1,  1,  1, -1, -1,  1, -1, -1],
                    [-1,  1,  1,  1,  1, -1,  1,  1,  1,  1],
@@ -303,57 +299,46 @@ def make_gru_model(h, w):
     b0 = np.array([-2, -3, -4, -6, -7, -4, -6, -4, -6, -4])
     gru_model.layers[2].set_weights([w1, b0])
 
-    # Recurrent 1
-    w2 = np.arange(1,11).reshape(10,1)
-    w3 = np.zeros((1,1))
-    b1 = np.zeros(1)
-    gru_model.layers[5].set_weights([w2, w3, b1])
-
     # Dense1
-    w4 = np.ones((1,2))
-    b2 = np.array([0,-1])
-    gru_model.layers[6].set_weights([w4, b2])
+    w2 = np.array([[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[8,1],[9,1],[10,1]])
+    b1 = np.zeros(2)
+    gru_model.layers[5].set_weights([w2,b1])
+
+    # Recurrent1
+    w3 = np.array([[0,0,0],[-1,0,0]]) #z_t = I(x_t =< 0) = 1 - I(x_t > 0)
+    w4 = np.array([[0,0,1]]) #h^_t = h_t-1 + 1
+    b2 = np.array([[1,1,1],[0,0,0]]) #r_t = 1, h^_t = h_t-1 + 1
+    gru_model.layers[6].set_weights([w3, w4, b2])
 
     # Dense2
-    w5 = np.array([[1],[-1]])
-    b3 = np.zeros(1)
+    w5 = np.ones((1,3*w_g))
+    b3 = np.repeat(-np.arange(w_g),3)
+    b3[1::3] = -np.arange(w_g)-1
+    b3[2::3] = -np.arange(w_g)-2
     gru_model.layers[7].set_weights([w5, b3])
 
-    # Recurrent 2
-    w6 = np.array([[-1,0,0]]) #z_t = I(x_t =< 0) = 1 - I(x_t > 0)
-    w7 = np.array([[0,0,1]]) #h^_t = h_t-1 + 1
-    b4 = np.array([[1,1,1],[0,0,0]]) #r_t = 1, h^_t = h_t-1 + 1
-    gru_model.layers[8].set_weights([w6, w7, b4])
-
     # Dense3
-    w8 = np.ones((1,3*w_g))
-    b5 = np.repeat(-np.arange(w_g),3)
-    b5[1::3] = -np.arange(w_g)-1
-    b5[2::3] = -np.arange(w_g)-2
-    gru_model.layers[9].set_weights([w8, b5])
+    w6 = np.zeros((3*w_g, w_g))
+    for j in range(w_g):
+        w6[(j*3):((j+1)*3),j] = np.array([1,-2,1])
+    b4 = np.zeros(w_g)
+    gru_model.layers[8].set_weights([w6, b4])
 
     # Dense4
-    w9 = np.zeros((3*w_g, w_g))
-    for j in range(w_g):
-        w9[(j*3):((j+1)*3),j] = np.array([1,-2,1])
-    b6 = np.zeros(w_g)
-    gru_model.layers[10].set_weights([w9, b6])
+    w7 = np.zeros((2+w_g, w_g))
+    w7[1,:] = np.ones(w_g)
+    w7[2:(2+w_g),:] = np.eye(w_g)
+    b5 = -np.ones(w_g)
+    gru_model.layers[10].set_weights([w7, b5])
 
-    # Dense5
-    w10 = np.zeros((1+w_g, w_g))
-    w10[0,:] = np.ones(w_g)
-    w10[1:(1+w_g),:] = np.eye(w_g)
-    b7 = -np.ones(w_g)
-    gru_model.layers[12].set_weights([w10, b7])
-
-    # Recurrent3
-    w11 = np.zeros((1+w_g, 3*w_g))    
-    w11[0,(2*w_g):(3*w_g)] = np.ones(w_g) # r^t = 1, h^_t = x_t
-    w11[1:(1+w_g),0:w_g] = -np.eye(w_g) # z_t = 1 - I(s=j and x>0)
-    w12 = np.zeros((w_g, 3*w_g))
-    b8 = np.zeros(3*w_g)
-    b8[0:w_g] = np.ones(w_g) # z_t = 1 - I(s=j and x>0)
-    gru_model.layers[14].set_weights([w11, w12, b8])
+    # Recurrent2
+    w8 = np.zeros((2+w_g, 3*w_g))    
+    w8[0,(2*w_g):(3*w_g)] = np.ones(w_g) # r^t = 1, h^_t = x_t
+    w8[2:(2+w_g),0:w_g] = -np.eye(w_g) # z_t = 1 - I(s=j and x>0)
+    w9 = np.zeros((w_g, 3*w_g))
+    b6 = np.zeros(3*w_g)
+    b6[0:w_g] = np.ones(w_g) # z_t = 1 - I(s=j and x>0)
+    gru_model.layers[12].set_weights([w8, w9, b6])
 
     return gru_model
 
@@ -376,25 +361,23 @@ def make_alt_gru_model(h, w):
     convlayer = tf.keras.layers.Conv2D(10, [3, 3], [1, 1], padding='valid', activation='relu')(reshape1)
     pooling = tf.keras.layers.MaxPooling2D(pool_size=(h,3), strides=(h,3), padding='same')(convlayer)
     reshape2 = tf.keras.layers.Reshape((w_g, 10))(pooling)
-    recurrent1 = tf.keras.layers.SimpleRNN(1, return_sequences=True, activation='linear')(reshape2)
-    dense1 = tf.keras.layers.Dense(2, activation='relu')(recurrent1)
-    dense2 = tf.keras.layers.Dense(1, activation='linear')(dense1)
+    dense1 = tf.keras.layers.Dense(2,activation='linear')(reshape2)
 
-    # Recurrent2 increments the position at non-zeros
+    # Recurrent1 creates s_t
     h0 = np.zeros((1,w_g+1))
     h0[0,0] = 1
     kh0 = tf.keras.backend.constant(h0)
-    recurrent2 = tf.keras.layers.GRU(w_g+1, activation='linear', recurrent_activation='linear', return_sequences=True, reset_after=False)(dense2, initial_state=kh0)
+    recurrent1 = tf.keras.layers.GRU(w_g+1, activation='linear', recurrent_activation='linear', return_sequences=True, reset_after=False)(dense1, initial_state=kh0)
     
-    merge1 = tf.keras.layers.Concatenate(axis=-1)([dense2, recurrent2])
-    dense3 = tf.keras.layers.Dense(w_g, activation='relu')(merge1)
-    merge2 = tf.keras.layers.Concatenate(axis=-1)([recurrent1,dense3])
-    recurrent3 = tf.keras.layers.GRU(w_g, activation='linear', recurrent_activation='relu', return_sequences=False, reset_after=False)(merge2)
+    merge1 = tf.keras.layers.Concatenate(axis=-1)([dense1, recurrent1])
+    dense2 = tf.keras.layers.Dense(w_g, activation='relu')(merge1)
+    merge2 = tf.keras.layers.Concatenate(axis=-1)([dense1, dense2])
+    recurrent2 = tf.keras.layers.GRU(w_g, activation='linear', recurrent_activation='relu', return_sequences=False, reset_after=False)(merge2)
     
-    gru_model = tf.keras.Model(inputs=inputs, outputs=recurrent3, name='gru_model')
+    gru_model = tf.keras.Model(inputs=inputs, outputs=recurrent2, name='gru_model')
     gru_model.compile(loss='mean_squared_error', metrics=['accuracy'])
 
-    # Weight asignments
+    # Weight assignments
     w0 = np.array([[-1,  1, -1,  1,  1,  1,  1,  1,  1,  1],
                    [ 1, -1, -1,  1,  1, -1, -1,  1, -1, -1],
                    [-1,  1,  1,  1,  1, -1,  1,  1,  1,  1],
@@ -408,42 +391,33 @@ def make_alt_gru_model(h, w):
     b0 = np.array([-2, -3, -4, -6, -7, -4, -6, -4, -6, -4])
     gru_model.layers[2].set_weights([w1, b0])
 
-    w2 = np.arange(1,11).reshape(10,1)
-    w3 = np.zeros((1,1))
-    b1 = np.zeros(1)
-    gru_model.layers[5].set_weights([w2, w3, b1])
+    w2 = np.array([[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[8,1],[9,1],[10,1]])
+    b1 = np.zeros(2)
+    gru_model.layers[5].set_weights([w2,b1])
 
-    w4 = np.ones((1,2))
-    b2 = np.array([0,-1])
-    gru_model.layers[6].set_weights([w4, b2])
-
-    w5 = np.array([[1],[-1]])
-    b3 = np.zeros(1)
-    gru_model.layers[7].set_weights([w5, b3])
-
-    # Recurrent 2
-    w6 = np.zeros((1, 3*(w_g+1)))
-    w6[0, 0:(w_g+1)] = -np.ones((1, w_g+1)) # z_t = 1 - I(x>0)
-    w7 = np.zeros((w_g+1, 3*(w_g+1)))
+    # Recurrent1
+    w3 = np.zeros((2, 3*(w_g+1)))
+    w3[1, 0:(w_g+1)] = -np.ones((1, w_g+1)) # z_t = 1 - I(x>0)
+    w4 = np.zeros((w_g+1, 3*(w_g+1)))
     for j in range(w_g):
-        w7[j, 2*(w_g+1)+j+1] = 1 # Set W_h to be right shift matrix
-    b4 = np.zeros(3*(w_g+1))
-    b4[0:2*(w_g+1)] = np.ones(2*(w_g+1)) # z_t = 1 - I(x>0), r_t = 1
-    gru_model.layers[8].set_weights([w6, w7, b4])
+        w4[j, 2*(w_g+1)+j+1] = 1 # Set W_h to be right shift matrix
+    b2 = np.zeros(3*(w_g+1))
+    b2[0:2*(w_g+1)] = np.ones(2*(w_g+1)) # z_t = 1 - I(x>0), r_t = 1
+    gru_model.layers[6].set_weights([w3, w4, b2])
 
-    w10 = np.zeros((2+w_g, w_g))
-    w10[0,:] = np.ones(w_g)
-    w10[2:(2+w_g),:] = np.eye(w_g)
-    b7 = -np.ones(w_g)
-    gru_model.layers[10].set_weights([w10, b7])
+    w5 = np.zeros((3+w_g, w_g))
+    w5[1,:] = np.ones(w_g)
+    w5[3:(3+w_g),:] = np.eye(w_g)
+    b3 = -np.ones(w_g)
+    gru_model.layers[8].set_weights([w5, b3])
 
-    w11 = np.zeros((1+w_g, 3*w_g))
-    w11[0,(2*w_g):(3*w_g)] = np.ones(w_g)
-    w11[1:(1+w_g),0:w_g] = -np.eye(w_g)
-    w12 = np.zeros((w_g, 3*w_g))
-    b8 = np.zeros(3*w_g)
-    b8[0:w_g] = np.ones(w_g)
-    gru_model.layers[12].set_weights([w11, w12, b8])
+    w6 = np.zeros((2+w_g, 3*w_g))    
+    w6[0,(2*w_g):(3*w_g)] = np.ones(w_g) # r^t = 1, h^_t = x_t
+    w6[2:(2+w_g),0:w_g] = -np.eye(w_g) # z_t = 1 - I(s=j and x>0)
+    w7 = np.zeros((w_g, 3*w_g))
+    b4 = np.zeros(3*w_g)
+    b4[0:w_g] = np.ones(w_g) # z_t = 1 - I(s=j and x>0)
+    gru_model.layers[10].set_weights([w6, w7, b4])
 
     return gru_model
 
@@ -506,27 +480,26 @@ def make_full_model(h, w, file='..\\words_3x3.txt'):
     convlayer = tf.keras.layers.Conv2D(10, [3, 3], [1, 1], padding='valid', activation='relu')(reshape1)
     pooling = tf.keras.layers.MaxPooling2D(pool_size=(h,3), strides=(h,3), padding='same')(convlayer)
     reshape2 = tf.keras.layers.Reshape((w_g, 10))(pooling)
-    recurrent1 = tf.keras.layers.SimpleRNN(1, return_sequences=True, activation='linear')(reshape2)
-    dense1 = tf.keras.layers.Dense(2, activation='relu')(recurrent1)
-    dense2 = tf.keras.layers.Dense(1, activation='linear')(dense1)
-    recurrent2 = tf.keras.layers.GRU(1, activation='linear', recurrent_activation='linear', return_sequences=True)(dense2)
-    dense3 = tf.keras.layers.Dense(3*w_g, activation='relu')(recurrent2)
-    dense4 = tf.keras.layers.Dense(w_g, activation='linear')(dense3)
-    merge1 = tf.keras.layers.Concatenate(axis=-1)([dense2,dense4])
-    dense5 = tf.keras.layers.Dense(w_g, activation='relu')(merge1)
-    merge2 = tf.keras.layers.Concatenate(axis=-1)([recurrent1,dense5])
-    recurrent3 = tf.keras.layers.GRU(w_g, activation='linear', recurrent_activation='relu', return_sequences=False, reset_after=False)(merge2)
+    dense1 = tf.keras.layers.Dense(2,activation='linear')(reshape2)
+    h0 = np.zeros((1,w_g+1))
+    h0[0,0] = 1
+    kh0 = tf.keras.backend.constant(h0)
+    recurrent1 = tf.keras.layers.GRU(w_g+1, activation='linear', recurrent_activation='linear', return_sequences=True, reset_after=False)(dense1, initial_state=kh0) 
+    merge1 = tf.keras.layers.Concatenate(axis=-1)([dense1, recurrent1])
+    dense2 = tf.keras.layers.Dense(w_g, activation='relu')(merge1)
+    merge2 = tf.keras.layers.Concatenate(axis=-1)([dense1, dense2])
+    recurrent2 = tf.keras.layers.GRU(w_g, activation='linear', recurrent_activation='relu', return_sequences=False, reset_after=False)(merge2)
 
     # Convert the GRU output to a single number and then to a word using lookup layers   
     words_3x3, numbers_3x3 = make_vocab(file=file)
-    dense6 = tf.keras.layers.Dense(1, activation='linear')(recurrent3)
-    lookup1 = tf.keras.layers.IntegerLookup(vocabulary=numbers_3x3)(dense6)
+    dense3 = tf.keras.layers.Dense(1, activation='linear')(recurrent2)
+    lookup1 = tf.keras.layers.IntegerLookup(vocabulary=numbers_3x3)(dense3)
     lookup2 = tf.keras.layers.StringLookup(vocabulary=words_3x3, invert=True)(lookup1)
 
     full_model = tf.keras.Model(inputs=inputs, outputs=lookup2, name='full_model')
     full_model.compile(loss='mean_squared_error', metrics=['accuracy'])
 
-    # Use layers from GRU model up to recurrent3
+    # Use layers from GRU model up to recurrent2
     w0 = np.array([[-1,  1, -1,  1,  1,  1,  1,  1,  1,  1],
                    [ 1, -1, -1,  1,  1, -1, -1,  1, -1, -1],
                    [-1,  1,  1,  1,  1, -1,  1,  1,  1,  1],
@@ -540,118 +513,37 @@ def make_full_model(h, w, file='..\\words_3x3.txt'):
     b0 = np.array([-2, -3, -4, -6, -7, -4, -6, -4, -6, -4])
     full_model.layers[2].set_weights([w1, b0])
 
-    w2 = np.arange(1,11).reshape(10,1)
-    w3 = np.zeros((1,1))
-    b1 = np.zeros(1)
-    full_model.layers[5].set_weights([w2, w3, b1])
+    w2 = np.array([[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],[8,1],[9,1],[10,1]])
+    b1 = np.zeros(2)
+    full_model.layers[5].set_weights([w2,b1])
 
-    w4 = np.ones((1,2))
-    b2 = np.array([0,-1])
-    full_model.layers[6].set_weights([w4, b2])
-
-    w5 = np.array([[1],[-1]])
-    b3 = np.zeros(1)
-    full_model.layers[7].set_weights([w5, b3])
-
-    w6 = np.array([[-1,0,0]])
-    w7 = np.array([[0,0,1]])
-    b4 = np.array([[1,1,1],[0,0,0]])
-    full_model.layers[8].set_weights([w6, w7, b4])
-
-    w8 = np.ones((1,3*w_g))
-    b5 = np.repeat(-np.arange(w_g),3)
-    b5[1::3] = -np.arange(w_g)-1
-    b5[2::3] = -np.arange(w_g)-2
-    full_model.layers[9].set_weights([w8, b5])
-
-    w9 = np.zeros((3*w_g, w_g))
+    # Recurrent1
+    w3 = np.zeros((2, 3*(w_g+1)))
+    w3[1, 0:(w_g+1)] = -np.ones((1, w_g+1)) # z_t = 1 - I(x>0)
+    w4 = np.zeros((w_g+1, 3*(w_g+1)))
     for j in range(w_g):
-        w9[(j*3):((j+1)*3),j] = np.array([1,-2,1])
-    b6 = np.zeros(w_g)
-    full_model.layers[10].set_weights([w9, b6])
+        w4[j, 2*(w_g+1)+j+1] = 1 # Set W_h to be right shift matrix
+    b2 = np.zeros(3*(w_g+1))
+    b2[0:2*(w_g+1)] = np.ones(2*(w_g+1)) # z_t = 1 - I(x>0), r_t = 1
+    full_model.layers[6].set_weights([w3, w4, b2])
 
-    w10 = np.zeros((1+w_g, w_g))
-    w10[0,:] = np.ones(w_g)
-    w10[1:(1+w_g),:] = np.eye(w_g)
-    b7 = -np.ones(w_g)
-    full_model.layers[12].set_weights([w10, b7])
+    w5 = np.zeros((3+w_g, w_g))
+    w5[1,:] = np.ones(w_g)
+    w5[3:(3+w_g),:] = np.eye(w_g)
+    b3 = -np.ones(w_g)
+    full_model.layers[8].set_weights([w5, b3])
 
-    w11 = np.zeros((1+w_g, 3*w_g))
-    w11[0,(2*w_g):(3*w_g)] = np.ones(w_g)
-    w11[1:(1+w_g),0:w_g] = -np.eye(w_g)
-    w12 = np.zeros((w_g, 3*w_g))
-    b8 = np.zeros(3*w_g)
-    b8[0:w_g] = np.ones(w_g)
-    full_model.layers[14].set_weights([w11, w12, b8])
+    w6 = np.zeros((2+w_g, 3*w_g))    
+    w6[0,(2*w_g):(3*w_g)] = np.ones(w_g) # r^t = 1, h^_t = x_t
+    w6[2:(2+w_g),0:w_g] = -np.eye(w_g) # z_t = 1 - I(s=j and x>0)
+    w7 = np.zeros((w_g, 3*w_g))
+    b4 = np.zeros(3*w_g)
+    b4[0:w_g] = np.ones(w_g) # z_t = 1 - I(s=j and x>0)
+    full_model.layers[10].set_weights([w6, w7, b4])
 
-    w13 = np.array([11]*w_g)**np.arange(w_g)
-    w13 = w13.reshape(w_g, 1)
-    b9 = np.zeros(1)
-    full_model.layers[15].set_weights([w13, b9])
+    w8 = np.array([11]*w_g)**np.arange(w_g)
+    w8 = w8.reshape(w_g, 1)
+    b5 = np.zeros(1)
+    full_model.layers[11].set_weights([w8, b5])
 
     return full_model
-
-
-# Try to implement again with a grid that may contain multiple words
-def pq_conv_model(p, q, w):
-    global pq_conv_model
-    grid_p = int(np.floor(p/w))
-    grid_q = int(np.floor(q/3))
-    inputs = tf.keras.Input(shape=(p, q))
-    reshape1 = tf.keras.layers.Reshape((p, q, 1))(inputs)
-    convlayer = tf.keras.layers.Conv2D(11, [3, 3], [1, 1], padding='valid', activation='relu')(reshape1)
-    pooling = tf.keras.layers.MaxPooling2D(pool_size=(grid_p,3), strides=(grid_p,3), padding='same')(convlayer)
-    reshape2 = tf.keras.layers.Permute((1,3,2))(pooling)
-    sum = tf.keras.layers.Dense(1, activation='linear')(reshape2)
-    pq_conv_model = tf.keras.Model(inputs=inputs, outputs=sum, name='pq_conv_model')
-    pq_conv_model.compile(loss='categorical_crossentropy', metrics=['accuracy'])
-
-    # Convolution layer
-    w0 = np.array([[-1,  1, -1,  1,  1,  1,  1,  1,  1,  1, 0],
-                   [ 1, -1, -1,  1,  1, -1, -1,  1, -1, -1, 0],
-                   [-1,  1,  1,  1,  1, -1,  1,  1,  1,  1, 0],
-                   [-1, -1, -1,  1,  1,  1,  1, -1,  1, -1, 0],
-                   [ 1,  1, -1, -1, -1, -1,  1,  1, -1,  1, 0],
-                   [-1, -1,  1, -1,  1, -1,  1, -1,  1, -1, 0],
-                   [-1, -1,  1,  1,  1,  1,  1, -1,  1,  1, 0],
-                   [ 1,  1,  1,  1,  1,  1, -1,  1,  1, -1, 0],
-                   [-1, -1,  1,  1,  1,  1,  1, -1,  1,  1, 0]])
-    
-    # Turns out we can just reshape w0 from the first model
-    w1 = w0.reshape(3,3,1,11)
-
-    b0 = np.array([-2.5, -3.5, -4.5, -6.5, -7.5, -4.5, -6.5, -4.5, -6.5, -4.5, 0])
-
-    pq_conv_model.layers[2].set_weights([2*w1, 2*b0])
-
-    w2 = np.ones([grid_p,1])
-
-    b1 = np.zeros(1)
-
-    pq_conv_model.layers[5].set_weights([w2, b1])
-
-"""
-zero_grid = np.zeros([12,18])
-input_grid = write_letter(zero_grid,"c",0,0)
-input_grid = write_letter(input_grid,"i",1,4)
-input_grid = write_letter(input_grid,"t",2,8)
-input_grid = write_letter(input_grid,"y",3,12)
-
-input_grid = write_letter(zero_grid,"j",6,0)
-input_grid = write_letter(input_grid,"u",5,4)
-input_grid = write_letter(input_grid,"l",7,8)
-input_grid = write_letter(input_grid,"y",9,12)
-
-   
-
-pq_conv_model(p=12,q=18,w=2)
-
-np.shape(pq_conv_model.predict(input_grid.reshape(1,12,18),verbose=0)) #(1,1,q/3,1)
-#np.shape(pq_conv_model.layers[5].get_weights()[0]) # (11,1)
-#np.shape(pq_conv_model.layers[5].get_weights()[1]) # (1,)
-pq_conv_model.predict(input_grid.reshape(1,12,18),verbose=0)
-"""
-# currently writes count for each letter per word separately
-
-
-

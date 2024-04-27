@@ -1,6 +1,6 @@
 To do list:
 
-1. [ ][13/17] Python code:
+1. [x][13/13] Python code:
     - [x][1/1] Boolean:
         - [x] Create Jupyter notebook
     - [x][2/2] Piecewise:
@@ -16,16 +16,14 @@ To do list:
         - [x] Create test script
         - [x] Create output results
         - [x] Create Jupyter notebook
-    - [ ][0/4] Digit recognition:
-        - [ ] Create test script
-        - [ ] Create output results
-        - [ ] Create Jupyter notebook
-        - [ ] Try to do something for second layer output
+    - [x][3/3] Digit recognition:
+        - [x] Create test script
+        - [x] Create output results
+        - [x] Create Jupyter notebook
 
-2. [ ][4/19] Overleaf project:
-    - [ ][0/2] Lay summary:
+2. [ ][16/18] Overleaf project:
+    - [x][1/1] Lay summary:
         - [x] Rewrite to be more lay
-        - [ ] Add second half describing what we did
     - [x][3/3] Introduction:
         - [x] Add activation functions
         - [x] Add description of training
@@ -46,20 +44,20 @@ To do list:
     - [x][2/2] Os and Xs:
         - [x] Clean writeup
         - [x] Reference Jupyter notebook
-    - [ ][0/2] Digits:
-        - [ ] Clean writeup
-        - [ ] Reference Jupyter notebook
-    - [ ][0/3] Figure creation:
-        - [ ] Results figures
-        - [ ] Results tables
+    - [ ][2/2] Digits:
+        - [x] Clean writeup
+        - [x] Reference Jupyter notebook
+    - [ ][2/3] Figure creation:
+        - [x] Results figures
+        - [x] Results tables
         - [ ] Introduction graphs
 
-3. [ ][2/11] General cleanup:
+3. [ ][5/12] General cleanup:
     - [ ] Remove template text
     - [x] Replace \mathbf with \pmb
     - [ ] Adjust formatting for any lists to look good
     - [x] Overall chapter structure
-    - [ ] Code function documentation
+    - [x] Code function documentation
     - [ ] References and bibtex
     - [x] Acknowledgements
     - [x] Create own github repo
@@ -68,18 +66,17 @@ To do list:
     - [ ] Final formatting
     - [ ] Check figure refs are working correctly
 
-4. [ ][] Feedback:
-    - [ ] Chapter 2 include 0/1 in trivial case
+4. [ ][3/13] Feedback:
+    - [x] Chapter 2 include 0/1 in trivial case
     - [ ] Re-write coefficients using inc/exc
     - [ ] Chapter 4 rewrite/organize
-    - [ ] Look into tensorflow version
+    - [x] Look into tensorflow version
     - [ ] Tabulate model layers prior to weights def
     - [ ] See if RNN can be replaced by dense
-    - [ ] Add names to layers
     - [ ] Clean up abbreviations
     - [ ] Avoid maths in first 2/3 words
     - [ ] Figure captions
-    - [ ] Add conclusion to intro
-    - [ ] Add some comments about implementing code
+    - [x] Add conclusion to intro
+    - [x] Add some comments about implementing code
     - [ ] Clean up f()
     - [ ] Ethics page

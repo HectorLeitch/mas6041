@@ -3,7 +3,6 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.lines
-import os
 import pandas as pd
 from itertools import combinations
 

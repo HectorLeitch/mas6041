@@ -3,7 +3,6 @@ import numpy as np
 import itertools
 import math
 from matplotlib import pyplot as plt
-import os
 from mpl_toolkits.mplot3d import Axes3D
 
 
