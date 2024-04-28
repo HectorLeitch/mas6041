@@ -21,7 +21,7 @@ To do list:
         - [x] Create output results
         - [x] Create Jupyter notebook
 
-2. [ ][16/18] Overleaf project:
+2. [x][18/18] Overleaf project:
     - [x][1/1] Lay summary:
         - [x] Rewrite to be more lay
     - [x][3/3] Introduction:
@@ -37,46 +37,49 @@ To do list:
     - [x][2/2] Zeroone:
         - [x] Clean writeup
         - [x] Reference Jupyter notebook
-    - [ ][2/3] Letters:
+    - [x][3/3] Letters:
         - [x] Clean writeup
         - [x] Reference Jupyter notebook
-        - [ ] Don't forget the weights we haven't added
+        - [x] Don't forget the weights we haven't added
     - [x][2/2] Os and Xs:
         - [x] Clean writeup
         - [x] Reference Jupyter notebook
-    - [ ][2/2] Digits:
+    - [x][2/2] Digits:
         - [x] Clean writeup
         - [x] Reference Jupyter notebook
-    - [ ][2/3] Figure creation:
+    - [x][3/3] Figure creation:
         - [x] Results figures
         - [x] Results tables
-        - [ ] Introduction graphs
+        - [x] Introduction graphs
 
-3. [ ][5/12] General cleanup:
-    - [ ] Remove template text
+3. [ ][10/13] General cleanup:
+    - [x] Remove template text
     - [x] Replace \mathbf with \pmb
-    - [ ] Adjust formatting for any lists to look good
+    - [x] Adjust formatting for any lists to look good
     - [x] Overall chapter structure
     - [x] Code function documentation
-    - [ ] References and bibtex
+    - [x] References and bibtex
     - [x] Acknowledgements
     - [x] Create own github repo
     - [ ] Figure/table/notation check through
-    - [ ] Appendices?
-    - [ ] Final formatting
+    - [ ] Appendices? code example and inc/exc
+    - [x] Final formatting
     - [ ] Check figure refs are working correctly
+    - [x] Rewrite letters equation 5.1
 
-4. [ ][3/13] Feedback:
+4. [ ][11/15] Feedback:
     - [x] Chapter 2 include 0/1 in trivial case
-    - [ ] Re-write coefficients using inc/exc
-    - [ ] Chapter 4 rewrite/organize
+    - [x] Re-write coefficients using inc/exc
+    - [x] Chapter 4 rewrite/organize
     - [x] Look into tensorflow version
-    - [ ] Tabulate model layers prior to weights def
-    - [ ] See if RNN can be replaced by dense
-    - [ ] Clean up abbreviations
+    - [x] Tabulate model layers prior to weights def
+    - [x] See if RNN can be replaced by dense
+    - [x] Clean up abbreviations
     - [ ] Avoid maths in first 2/3 words
-    - [ ] Figure captions
+    - [x] Figure captions
     - [x] Add conclusion to intro
     - [x] Add some comments about implementing code
-    - [ ] Clean up f()
+    - [x] Clean up f()
     - [ ] Ethics page
+    - [ ] Remove titles from captioned figures
+    - [ ] Discussion themes consistency (Isabelle)
