@@ -51,37 +51,43 @@
 
 \section{Neural Networks}
 
-Artificial Neural Networks (ANNs), or simply "Neural Networks" for short, are perhaps one of the most popular and well-known classes of machine learning models in the world today, able to outperform humans in a number of tasks with applications such as AlphaGo \citep{silver2016mastering}, a computer player for the game Go, and ChatGPT, a chat-bot with exceptional language capabilities that was the focus of a huge number of articles and news reports in 2023 \citep{ray2023chatgpt}. Neural networks have been widely applied in image processing, including medical image diagnostics \citep{jiang2010medical}, and finance \citep{fadlalla2001analysis}, where they are often able to outperform traditional statistical models.
+\subsection{Literature Coverage}
 
-Artificial Neural Networks are inspired by biological neural networks found in animal brains, which are composed of neurons connected to each other via synapses. Organized into large networks, such a system is able to process information by sending electrical signals throughout the network.
+A search for relevant literature found few publications in recent decades specifically focused on small neural networks. Search terms including "small neural networks" yielded publications focused on neural networks applied to small datasets. This included specifying particular types of neural network through adding keywords including "convolution", "recurrent", "LSTM", and "transformer". Similarly, search terms containing "handbuilt", "hand-built", "handmade", or "hand-made" did not yield any publications that involved constructing neural networks in a similar manner to how we have done so throughout this project. Therefore, the introduction to this project will focus on explaining the ideas of neural networks, including the layer types used in this project.
 
-An Artificial Neural Network similarly consists of neurons and connections, which are represented in a graph of vertices (or nodes) and edges respectively. Typically, these networks are arranged into layers of nodes, where the edges connect the nodes from one layer to the nodes in an adjacent layer. The layer at the start of the network is the input layer, where the nodes take the input data, and the layer at the end of the network is the output layer, which produces the output data. The layers in between are called hidden layers. Each edge is assigned a weight, which is a real value that "scales" the information from one node to another. The weights in a network determine the relationship between the input data and the output data, and so adjusting these weights determines how well a neural network will perform at a given task. Attached to the output nodes of each layer is an activation function which is applied to the scaled input it receives.
+\subsection{Introduction to Neural Networks}
+
+Artificial Neural Networks (ANNs), or simply "Neural Networks" for short, are perhaps one of the most popular and well-known classes of machine learning models in the world today, able to outperform humans in a number of tasks with applications such as AlphaGo \citep{silver2016mastering}, a computer player for the game Go, and ChatGPT, a chat-bot with exceptional language capabilities that was the focus of a huge number of articles and news reports in 2023 \citep{ray2023chatgpt}. Neural networks have been widely applied \citep{sarker2021deep} in image processing, including medical image diagnostics \citep{jiang2010medical} and finance \citep{fadlalla2001analysis}, where they are often able to outperform traditional statistical models.
+
+ANNs are inspired by biological neural networks found in animal brains, which are composed of neurons connected to each other via synapses. Organized into large networks, such a system is able to process information by sending electrical signals throughout the network.
+
+An ANN similarly simulates neurons and connections, using a graph of vertices (or nodes) and edges respectively. Typically, these networks are arranged into layers of nodes, where the edges connect the nodes from one layer to the nodes in an adjacent layer. The layer at the start of the network is the input layer, where the nodes take the input data, and the layer at the end of the network is the output layer, which produces the output data. The layers in between are called hidden layers. Each edge is assigned a weight, which is a real value that represents the strength of a connection between two nodes. The weights in a network determine the relationship between the input data and the output data, and so adjusting these weights determines how well a neural network will perform at a given task. An activation function is attached to the output nodes of each layer, which is applied to the scaled input it receives to create the final scaled output values. Figure 1.1 shows how a small ANN could be represented.
 
 \begin{figure}[H]
 \begin{center}
 \includegraphics[width=12cm]{intro_1.png}
 \end{center}
-\caption{A diagram of a simple Artificial Neural Network. There is an input layer consisting of 3 inputs $\left(x_1, x_2, x_3\right)$, a hidden layer with 4 nodes, and an output layer consisting of 3 outputs $\left(y_1, y_2, y_3\right)$.}
+\caption{A diagram of a simple ANN. There is an input layer consisting of 3 inputs $\pmb{x} = \left(x_1, x_2, x_3\right)$, a hidden layer with 4 nodes, and an output layer consisting of 3 outputs $\pmb{y} = \left(y_1, y_2, y_3\right)$.}
 \end{figure}
 
 \subsection{Layer Architectures}
 
-Here we introduce different types of layers and the notation used to describe how they function. In general, a layer $\mathcal{L}$ is a function that takes an input $\pmb{x}$ from a previous layer, and produces an output $\mathcal{L}\left(\pmb{x}\right)$. We will use $\mathcal{L}^{\left[i\right]}$ to denote the $i$-th layer of a neural network. Neural network layers take real input values and produce real output values, although we will see examples where the networks are specially designed to restrict the inputs and/or outputs to integers or natural numbers.
+Here we introduce different types of layers and the notation used to describe how they function. In general, a layer $\mathcal{L}$ is a function that takes an input vector $\pmb{x}$ from a previous layer, and produces an output $\mathcal{L}\left(\pmb{x}\right)$. We will use $\mathcal{L}^{\left[i\right]}$ to denote the $i$-th layer of a neural network. The input layer is unique in that it only stores the input values, and throughout this project will be $\mathcal{L}^{\left[0\right]}$, meaning the first layer is specifically the first layer hidden layer after the input layer and so on. Neural network layers take real input values and produce real output values, although we will see examples where the networks are specially designed to restrict the inputs and/or outputs to integers or natural numbers.
 
-A \textit{dense layer} or \textit{fully-connected layer} is a layer where the input and output are fully connected: every node in the input layer is connected by an edge to every node in the output layer. The output of a dense layer is calculated according to a \textit{weights matrix} $\mathbf{W}$, a \textit{bias vector} $\pmb{b}$, and an \textit{activation function} $f$. The output of a dense layer is calculated as
+A \textit{dense layer} or \textit{fully-connected layer} is a layer that is fully connected to the previous layer: every node in the previous layer is connected by an edge to every node in the dense layer. The output of a dense layer is calculated according to a \textit{weights matrix} $\mathbf{W}$, a \textit{bias vector} $\pmb{b}$, and an \textit{activation function} $f$. The output of a dense layer is calculated as
 \begin{align*}
 \mathcal{L}\left(\pmb{x}\right) = f(\mathbf{W}\pmb{x} + \pmb{b}).
 \end{align*}
 
-Note that when writing exact weights for our hand-built models, the dimensions often make it more convenient to write out $\mathbf{W}^T$ and/or $\pmb{b}^T$.
+The dimensions of $\mathbf{W}$ and $\pmb{b}$ are such that the result is a vector with length equal to the number of nodes in the dense layer: the matrix $\mathbf{W}$ has one row per node in the dense layer, and one column per node in the previous layer, and the vector $\pmb{b}$ is the same length as the number of nodes in the dense layer. Note that when writing exact weights for our hand-built models, the dimensions often make it more convenient to transpose the weights and bias, writing $\mathbf{W}^T$ and/or $\pmb{b}^T$ instead.
 
-A \textit{convolution layer} is a layer where the traditional connections of a dense layer are replaced by one or more \textit{filters} or \textit{kernels}. We will consider convolution layers in 2 dimensions: instead of an input vector $\pmb{x}$, a 2-dimensional convolution layer $\mathcal{L}$ receives an input matrix $\mathbf{X}$ (typically representing an image) and returns an output matrix $\mathcal{L}\left(\mathbf{X}\right)$. A kernel is a collection of weights also represented by a matrix $\mathbf{W}$. Instead of matrix multiplication, the weights are combined with the input through \textit{convolution}. A matrix $\mathbf{W}$ of size $p \times q$ convoluted with an input matrix $\mathbf{X}$ of size $n \times m$ to produce an output matrix $\mathbf{Y}$ of size $\left(n-p+1\right),\left(m-q+1\right)$ through
+A \textit{convolution layer} is a layer where the traditional connections of a dense layer are replaced by one or more \textit{kernels}, often also called \textit{filters}. We will consider convolution layers in 2 dimensions, meaning that instead of an input vector $\pmb{x}$, a 2-dimensional convolution layer $\mathcal{L}$ receives an input matrix $\mathbf{X}$ (typically representing an image) and returns an output matrix $\mathcal{L}\left(\mathbf{X}\right)$. A kernel is a collection of weights also represented by a matrix $\mathbf{W}$ with dimensions smaller than or equal to the input size, which are determined by the user. Instead of matrix multiplication, the weights are combined with the input through \textit{convolution}. A matrix $\mathbf{W}$ of chosen size $p \times q$ can be convoluted with an input matrix $\mathbf{X}$ of size $n \times m$ to produce an output matrix $\mathbf{Y}$ of size $\left(n-p+1\right),\left(m-q+1\right)$ through
 \begin{align*}
-\left[\mathbf{Y}\right]_{i,j} = \sum_{r=0}^{p-1} \sum_{s=0}^{q-1} \left[\mathbf{X}\right]_{i+r, j+s} \left[\mathbf{W}\right]_{r,s}.
+\mathbf{Y}_{i,j} = \sum_{r=0}^{p-1} \sum_{s=0}^{q-1} \mathbf{X}_{i+r, j+s} \mathbf{W}_{r,s}.
 \end{align*}
-The layer then adds a bias $b$ and applies an activation function $f$ element-wise, so the output of the layer is
+The layer then adds a bias $b$ and applies an activation function $f$, so the output of the layer is
 \begin{align*}
-\left[\mathcal{L}\left(\mathbf{X}\right)\right]_{i,j} = f\left(\sum_{r=0}^{p-1} \sum_{s=0}^{q-1} \left[\mathbf{X}\right]_{i+r, j+s} \left[\mathbf{W}\right]_{r,s} + b\right).
+\mathcal{L}\left(\mathbf{X}\right)_{i,j} = f\left(\sum_{r=0}^{p-1} \sum_{s=0}^{q-1} \mathbf{X}_{i+r, j+s} \mathbf{W}_{r,s} + b\right).
 \end{align*}
 For image processing, convolution layers have some notable benefits over dense layers:
 \begin{itemize}
@@ -90,22 +96,22 @@ For image processing, convolution layers have some notable benefits over dense l
     \item As a single kernel adds relatively few parameters to the model, convolution layers can easily be expanded by adding additional kernels to explore and learn additional features. A convolution layer with multiple kernels evaluated simultaneously can be referred to as having multiple \textit{channels}.
 \end{itemize}
 
-Often used in conjunction with convolution layers, a \textit{max pooling layer} is a layer that takes and image or feature map $\mathbf{X} \in \mathbb{R}^{n \times m}$ and returns an output matrix $\mathcal{L}\left(\mathbf{X}\right) \in \mathbb{R}^{u \times v}$, where $u < n$ and $v < m$. The max pooling layer takes a sub-matrix of size $p \times q$ of $\mathbf{X}$ and returns the maximum element. The purpose of a max pooling layer is to reduce the size of the output from a convolution layer, as this is usually similar in size to that of the original image, whilst retaining the most relevant information. We will consider max pooling where each sub-matrix that pooling is applied to does not overlap, so the expected output will be of size $n/p \times m/q$. If $u$ or $v$ does not divide $n$ or $m$ respectively, the input may be \textit{padded} with zeros so that the output is of size $\lceil n/p \rceil \times \lceil m/q \rceil$. Max pooling is applied to each channel from the convolution layer, so the output will still retain the information from each channel separately.
+Often used in conjunction with convolution layers, a \textit{max pooling layer} is a layer that takes an image or feature map $\mathbf{X} \in \mathbb{R}^{n \times m}$ and returns an output matrix $\mathcal{L}\left(\mathbf{X}\right) \in \mathbb{R}^{u \times v}$, where $u < n$ and $v < m$. The max pooling layer takes a sub-matrix of size $p \times q$ of $\mathbf{X}$ and returns the maximum element. The purpose of a max pooling layer is to reduce the size of the output from a convolution layer, as this is usually similar in size to that of the original image, whilst retaining the most relevant information. We will consider max pooling where each sub-matrix that pooling is applied to does not overlap, so the expected output will be of size $n/p \times m/q$. If $u$ or $v$ does not divide $n$ or $m$ respectively, the input may be \textit{padded} with zeros so that the output is of size $\lceil n/p \rceil \times \lceil m/q \rceil$. Max pooling is applied to each channel from the convolution layer, so the output will still retain the information from each channel separately.
 
-A \textit{recurrent layer} is a layer that takes a sequence of inputs $\left\{\pmb{x}\right\}_{t=1}^T$ and returns a sequence of outputs $\left\{\pmb{y}\right\}_{t=1}^T$. At time $t$, the output of the recurrent layer depends on both the input $\pmb{x}_t$, and the previous output $\pmb{y}_{t-1}$. The layer uses two weights matrices: $\mathbf{W}$ to transform the input $\pmb{x}_t$, and $\mathbf{U}$ to transform the previous output $\pmb{y}_{t-1}$. the recurrent layer also has a bias $\pmb{b}$ and activation function $f$. The output at time $t$ is given as
+A \textit{recurrent layer} is a layer that takes a sequence of inputs $\left\{\pmb{x}_t\right\}_{t=1}^T$ and returns a sequence of outputs $\left\{\pmb{y}_t\right\}_{t=1}^T$. At time $t$, the output of the recurrent layer depends on both the input $\pmb{x}_t$, and the previous output $\pmb{y}_{t-1}$. The layer uses two weights matrices: $\mathbf{W}$ to transform the input $\pmb{x}_t$, and $\mathbf{U}$ to transform the previous output $\pmb{y}_{t-1}$. the recurrent layer also has a bias $\pmb{b}$ and activation function $f$. The output at time $t$ is given as
 \begin{align*}
 \mathcal{L}\left(\mathbf{X}\right)_t = \pmb{y}_t = f(\mathbf{W}\pmb{x}_t + \mathbf{U}\pmb{y}_{t-1} + \pmb{b}),
 \end{align*}
-where $\pmb{y}_0$ is initialized as $\mathbf{0}$. Recurrent layers are designed to process sequences of inputs and so have been applied to problems such as time series forecasting and speech recognition \citep{graves2013speech}. Note that when using recurrent layers, we have the option to return the whole sequence $\left\{\pmb{y}\right\}_{t=1}^T$, or just the final output $\pmb{y}_T$.
+where $\pmb{y}_0$ is initialized as $\mathbf{0}$. Recurrent layers are designed to process sequences of inputs, illustrated in figure 1.2, and have been applied to problems such as time series forecasting and speech recognition \citep{graves2013speech}. Note that when using recurrent layers, we have the option to return the whole sequence $\left\{\pmb{y}_t\right\}_{t=1}^T$, or just the final output $\pmb{y}_T$.
 
 \begin{figure}[H]
 \begin{center}
 \includegraphics[width=12cm]{intro_2.png}
 \end{center}
-\caption{A diagram showing how a recurrent layer processes inputs starting at an input $\pmb{x}_t$, to an output value $\pmb{y}_T$ where $T=t+2$. The same weights $\mathbf{W}$, $\mathbf{U}$, and bias $\pmb{b}$ are used for every input in the sequence.}
+\caption{A diagram showing the last two calculations of a recurrent layer, from an input $\pmb{x}_t$, to an output value $\pmb{y}_T$ where $T=t+2$. The same weights $\mathbf{W}$, $\mathbf{U}$, and bias $\pmb{b}$ are used for every input in the sequence.}
 \end{figure}
 
-A \textit{gated recurrent unit} or GRU, proposed by \citet{DBLP:journals/corr/ChoMGBSB14}, is a variation of the recurrent layer, which also takes a sequence of inputs $\left\{\pmb{x}\right\}_{t=1}^T$ and returns a sequence of outputs $\left\{\pmb{y}\right\}_{t=1}^T$. The GRU contains two gates: a \textit{reset gate} which adjusts how much of the previous output is carried forward to propose a new output state, and a \textit{update gate} which adjusts the input to be a combination of the previous output state and the new proposed output state. The output of the GRU is calculated through a series of steps outlined below.
+A \textit{gated recurrent unit} (GRU), proposed by \citet{DBLP:journals/corr/ChoMGBSB14}, is a variation of the recurrent layer, that also takes a sequence of inputs $\left\{\pmb{x}_t\right\}_{t=1}^T$ and returns a sequence of outputs $\left\{\pmb{y}_t\right\}_{t=1}^T$. The GRU contains two gates: a \textit{reset gate} which adjusts how much of the previous output is carried forward to propose a new output state, and a \textit{update gate} which adjusts the input to be a combination of the previous output state and a new proposed output state. The output of the GRU is calculated through a series of steps outlined below.
 
 \begin{itemize}
     \item Calculate the reset amount,
@@ -126,31 +132,27 @@ A \textit{gated recurrent unit} or GRU, proposed by \citet{DBLP:journals/corr/Ch
     \mathcal{L}\left(\mathbf{X}\right)_t = \pmb{y}_t = \pmb{z}_t \odot \pmb{y}_{t-1} + \left(\mathbf{1} - \pmb{z}_t\right) \odot \hat{\pmb{y}}_t.
     \end{align*}
 \end{itemize}
-Note that we use two activation functions $f$ and $g$. In this case we call $f$ the \textit{recurrent activation}. It is common for the output $\pmb{y}_t$ to be referred to as the \textit{hidden state} and notated as $h_t$ or $\pmb{h}_t$, as when we consider only the final $\pmb{y}_T$ as the output of the layer, we do not see the hidden states.
+Note that we use two activation functions $f$ and $g$. In this case we call $f$ the \textit{recurrent activation}. It is common for the output $\pmb{y}_t$ to be referred to as the \textit{hidden state} and notated as $h_t$ or $\pmb{h}_t$ because, when we consider only the final $\pmb{y}_T$ as the output of the layer, we do not see the hidden states.
 
 \subsection{Training and Optimization}\label{intro:train}
 
-Suppose we have chosen a particular combination of layers to build a neural network with the aim of performing a given task. We now need a method of assigning the weights and biases associated with each layer in order for the network to perform the task well, using a set of \textit{training data} where inputs are paired with the corresponding desired output. This scenario is commonly described as \textit{supervised learning}. Here we introduce how neural networks are generally \textit{trained} given training data.
+Suppose we have chosen a particular combination of layers to build a neural network with the aim of performing a given task. We now need a method of assigning the weights and biases associated with each layer in order for the network to perform the task well. In \textit{supervised learning}, this uses a set of \textit{training data} where inputs are paired with the corresponding desired output.
 
-Suppose that we have training data $\left\{\pmb{x}, \pmb{y}\right\}_{i=1}^n$, where each $\pmb{x}_i$ is a set input and each $\pmb{y}_i$ is the true output. Given a network $\mathcal{N}$ with any valid initial weights, we can produce a predicted value for each input in the training data
+Suppose that we have training data $\left\{\pmb{x}_i, \pmb{y}_i\right\}_{i=1}^n$, where each $\pmb{x}_i$ is a set input and each $\pmb{y}_i$ is the true output. Given a network $\mathcal{N}$ with any valid initial weights, we can produce a predicted value for each input in the training data
 \begin{align*}
 \mathcal{N}\left(\pmb{x}_i\right) = \hat{\pmb{y}}_i.
 \end{align*}
-We can evaluate how well the network is performing by introducing a \textit{loss function} which gives us a real value that broadly indicates you well the predictions $\left\{\hat{\pmb{y}}\right\}_{i=1}^n$ match the true outputs $\left\{\pmb{y}\right\}_{i=1}^n$. A loss function $l$ is typically defined through a calculation involving $\left\{\hat{\pmb{y}}, \pmb{y}\right\}_{i=1}^n$. However, given $\left\{\pmb{y}\right\}_{i=1}^n$, we note that the predicted values $\left\{\hat{\pmb{y}}\right\}_{i=1}^n$ are a function of the network weights and biases, which we will notate as $\mathbf{W}_{\mathcal{N}}$. Therefore, we can write
-\begin{align*}
-l\left(\pmb{y}, \hat{\pmb{y}}\right) = l\left(\mathbf{W}_{\mathcal{N}} | \pmb{y}\right).
-\end{align*}
-The process of training then attempts to minimize the loss function $l$ by adjusting the weights and biases $\mathbf{W}_{\mathcal{N}}$.
+We can evaluate how well the network is performing by introducing a \textit{loss function} which gives us a real value that broadly indicates how well the predictions $\hat{\pmb{y}} = \left\{\hat{\pmb{y}}_i\right\}_{i=1}^n$ match the true outputs $\pmb{y} = \left\{\pmb{y}_i\right\}_{i=1}^n$. A loss function $l$ is typically defined through a calculation involving $\hat{\pmb{y}}$ and $\pmb{y}$. However, given $\pmb{y}$, we note that the predicted values $\hat{\pmb{y}}$ are a function of the network weights and biases, which we will notate as $\mathbf{W}_{\mathcal{N}}$. Therefore, we treat the loss as a function of the weights, writing $l(\mathbf{W}_{\mathcal{N}} | \pmb{y})$ instead of $l(\pmb{y}, \hat{\pmb{y}})$. The process of training then attempts to minimize the value of loss function $l$ by adjusting the weights and biases $\mathbf{W}_{\mathcal{N}}$.
 
 We have now set up a minimization problem for the function $l$ with respect to its parameters $\mathbf{W}_{\mathcal{N}}$. A common way to solve minimization problems is to use some form of gradient descent, and we are able to do this with neural networks consisting of the layers we have introduced so far, provided the following conditions are also true:
 \begin{itemize}
     \item The loss function $l$ is differentiable with respect to the parameters $\mathbf{W}_{\mathcal{N}}$.
     \item The activation functions within the network are all differentiable with respect to their inputs.
 \end{itemize}
-This ensures that for each input $\pmb{x}_i$ and target output $\pmb{y}_i$, we can estimate the gradient of $l$ at $\pmb{x}_i$ by repeatedly applying the chain rule in a process known as \textit{backpropagation}. Particular activation functions that satisfy this criteria which we will need notation for are the following:
+This ensures that, for each input $\pmb{x}_i$ and target output $\pmb{y}_i$, we can estimate the gradient of $l$ at $\pmb{x}_i$ by repeatedly applying the chain rule in a process known as \textit{backpropagation}. Particular activation functions that satisfy this criteria which we will need notation for are the following:
 \begin{itemize}
-    \item The \textit{rectified linear unit} or ReLU function, which we will notate as $\left(x\right)_+ = \max{\left(0, x\right)}$.
-    \item The \textit{softmax} function, which we will notate as $\sigma\left(\pmb{x}\right)$, is a vector function where $\sigma\left(\pmb{x}\right)_i = \frac{e^{x_i}}{\sum_{j=1}^k e^{x_j}}$. This can be thought of as turning the values in $\pmb{x}$ into "probabilities" that sum to 1. For example, in multinomial logistic regression, the softmax function applied to the linear predictors does actually give us estimated probabilities.
+    \item The \textit{rectified linear unit} (ReLU) function, denoted by $\left(x\right)_+ = \max{\left(0, x\right)}$.
+    \item The \textit{softmax} function, denoted by $\sigma\left(\pmb{x}\right)$, is a vector function where $\sigma\left(\pmb{x}\right)_i = \frac{e^{x_i}}{\sum_{j=1}^k e^{x_j}}$. This can be thought of as turning the values in $\pmb{x}$ into "probabilities" that sum to 1. For example, in multinomial logistic regression, the softmax function applied to the linear predictors does actually give us estimated probabilities.
     \item The \textit{linear} activation function, which is equivalent to applying no activation function i.e. $f(x) = x$. If the activation function of a layer is not specifically mentioned, it can be assumed that it has the linear activation function.
 \end{itemize}
 
@@ -163,35 +165,42 @@ There are several variants of gradient descent algorithms that are used to train
 
 \section{Dissertation Overview}
 
-This dissertation contains six further chapters. Each chapter will introduce a problem scenario in which we have implemented neural networks, the methods which are used to build and/or train the networks, and a discussion covering any particular points which were interesting for each example. Each chapter has an accompanying Jupyter notebook to demonstrate the models that have been implemented working for a variety of input parameters. The Jupyter notebooks, and the underlying functions that constitute the main implementations of the neural networks, can be accessed through the Github at \url{https://github.com/HectorLeitch/mas6041}.
+This dissertation contains six further chapters. Each chapter will introduce a problem scenario in which we have implemented neural networks, the methods used to build and/or train the networks, and a discussion covering interesting points from each example. Each chapter has an accompanying Jupyter notebook to demonstrate the models that have been implemented working for a variety of input parameters. The Jupyter notebooks, and the underlying functions that constitute the main implementations of the neural networks, can be accessed through the Github at \url{https://github.com/HectorLeitch/mas6041}.
 
 The problem scenarios covered in this dissertation are as follows:
 \begin{itemize}
     \item Chapter 2: Boolean functions. We investigate evaluating Boolean functions through neural networks. We extend a basic example with only two input variables, up to a generalization for $n \geq 2$ arguments.
     \item Chapter 3: Piece-wise linear functions. We investigate evaluating piece-wise linear functions. Similarly to Chapter 2, we start with a basic example in one dimension and generalize it for $n \geq 1$ dimensions.
-    \item Chapter 4: Searching or translating "zero" and "one". We demonstrate a method of searching for particular words in a text using a model that can cycle through a finite number of states.
-    \item Chapter 5: Letter and word detection: We introduce detection of letters and words within a small image. We build models from the ground up with increased functionality at each stage.
+    \item Chapter 4: Searching for "zero" and "one". We demonstrate a method of searching for particular words in a text using a model that can cycle through a finite number of states.
+    \item Chapter 5: Letter and word detection in images: We introduce detection of letters and words within a small image. We build models from the ground up with increased functionality at each stage.
     \item Chapter 6: Noughts and crosses: We investigate models that are trained to play noughts and crosses. The aim is to train a baseline model and then improve its architecture to more effectively and efficiently learn how to play.
-    \item Chapter 7: Digit recognition: We tackle a popular problem of recognizing digits 0 to 9 within a small image. We investigate how elements of a hand-crafted model can be used as a guide to improving the effectiveness and efficiency of a trained model.
+    \item Chapter 7: Digit recognition in images: We tackle a popular problem of recognizing digits 0 to 9 within a small image. We investigate how elements of a hand-crafted model can be used as a guide to improving the effectiveness and efficiency of a trained model.
 \end{itemize}
 
-Each chapter includes discussion of the work done such as the limitations, possible improvements and ideas for further work. The project finishes with a short conclusion summarizing the common themes and ideas, in addition to some more general further applications that could be considered.
+Each chapter includes discussion of the work done including the limitations, possible improvements, and ideas for further work. The project finishes with a short conclusion summarizing the common themes and ideas, in addition to some more general further applications that could be considered.
 
-Ethics approval was not required as all the data was generated within the programs, as explain in [ref].
+Across the selection of problem scenarios, this exploratory study examines:
+\begin{itemize}
+    \item The extent to which small neural networks can be designed and mathematically deduced by hand to perform specific tasks, and what can be learned from the experience of applying this approach.
+    \item The performance and efficiency of such networks when compared to networks that are using training data.
+    \item The extent to which the insights from designing networks can be used to improve the performance and training time of neural networks that are using training data.
+\end{itemize}
+
+Ethics approval was not required because all the data was generated within the programs, as explained in appendix \ref{apx:ethics}.
 
 \section{Tensorflow and Keras}
 
 The models described in this project have been implemented using Tensorflow \citep{tensorflow2015-whitepaper}, an open-source machine learning platform, and Keras \citep{chollet2015keras}, a module for neural networks that brings Tensorflow's capabilities into Python. This was both extremely convenient and a very challenging aspect of the project.
 
-Keras provides very high level functions and classes for implementing neural networks. This provides the convenience as layers can be added to a model using a single function and a model can be fully defined using a short block of code. However, this means that problems and errors are very hard to debug, as the messages tend to trace back through several layers of functions, often ending up returning something that cannot be understood by a relatively new user. A common problem encountered, especially when coding the hand-built models, was setting the correct shape of objects defined in the code. Matrix multiplication of weights with an input could often be confused because the transpose of what was required had been mistakenly created. While the full code can be viewed through Github, a walk-through example is included in appendix [ref].
+Keras provides very high level functions and classes for implementing neural networks. This provides the convenience as layers can be added to a model using a single function and a model can be fully defined using a short block of code. However, this means that problems and errors are very hard to debug, as the messages tend to trace back through several layers of functions, often ending up returning something that cannot be understood by a relatively new user. A common problem encountered, especially when coding the hand-built models, was setting the correct shape of objects defined in the code. Matrix multiplication of weights with an input could often be confused because the transpose of what was required had been mistakenly created. While the full code can be viewed through Github, a walk-through example is included in appendix \ref{apx:code}.
 
-The list of core modules used and their versions can be found below.
+The core modules used and their versions can be found below.
 
 \begin{itemize}
     \item Tensorflow v2.9.1 \citep{tensorflow2015-whitepaper}
     \item Keras v2.9.0 \citep{chollet2015keras}
     \item Numpy v1.23.1 \citep{harris2020array}
-    \item Matplotlib \citep{Hunter:2007}
+    \item Matplotlib v3.5.2 \citep{Hunter:2007}
     \item Pandas v2.0.3 \citep{mckinney-proc-scipy-2010}
     \item Itertools v3.12.3 \citep{van1995python}
 \end{itemize}
@@ -202,7 +211,7 @@ The version of Python used was 3.10.5.
 
 \section{Introduction}
 
-In many settings such as computing, 1 and 0 are used to represent "True" and "False" respectively; in this case the value 1 or 0 is known as a \textit{Boolean} value. In this section we will consider \textit{Boolean functions}, defined as a function from $\left\{0, 1\right\}^n$ to $\left\{0, 1\right\}$ for some positive integer $n$.
+In many settings such as computing, 1 and 0 are used to represent "True" and "False" respectively; in this case the value 1 or 0 is known as a \textit{Boolean} value. In this section we will consider \textit{Boolean functions}, defined as functions from $\left\{0, 1\right\}^n$ to $\left\{0, 1\right\}$ for some positive integer $n$.
 
 Logical operators are familiar examples of Boolean functions used in programming. These include:
 \begin{itemize}
@@ -212,21 +221,21 @@ Logical operators are familiar examples of Boolean functions used in programming
     \item "Or": $f:\left\{0, 1\right\}^2 \rightarrow \left\{0, 1\right\}$ defined by $f(x,y) = \max{\left(x, y\right)}$.
 \end{itemize}
 
-Boolean functions are commonly defined through \textit{truth tables}. A truth table for a Boolean function $f$ is a tabulation of all the possible inputs $x \in \left\{0, 1\right\}^n$ and the corresponding outputs $f(x)$. In our models, we use the Python function \verb|itertools.product()| to generate the possible set of inputs $\left\{0, 1\right\}^n$. The nested loops cycle like an odometer with the rightmost element advancing on every iteration. Therefore, we can assume a list of outputs $\left(u_0, \dots, u_{2^n-1}\right)$ corresponds to the list of inputs given by this ordering, uniquely defining $f$.
+Boolean functions are commonly defined through \textit{truth tables}. A truth table for a Boolean function $f$ is a tabulation of all the possible inputs $x \in \left\{0, 1\right\}^n$ and the corresponding outputs $f(x)$. For the models in this chapter, the Python function \verb|itertools.product()| to generate the possible set of inputs $\left\{0, 1\right\}^n$. The nested loops cycle like an odometer with the rightmost element advancing on every iteration. Therefore, we can assume a list of outputs $\left(u_0, \dots, u_{2^n-1}\right)$ corresponds to the list of inputs given by this ordering, uniquely defining $f$.
 
-This section will start by demonstrating hand-built neural networks to calculate any Boolean function $f:\left\{0, 1\right\}^n \rightarrow \left\{0, 1\right\}$ given the outputs $\left(u_0, \dots, u_{2^n-1}\right)$. We then build neural networks to calculate \textit{all} Boolean functions $f:\left\{0, 1\right\}^n \rightarrow \left\{0, 1\right\}$ simultaneously, given $n$. We then consider how the architecture of particular networks may be adapted to increase their efficiency. Note, that we consider the case $n=1$ to be trivial: the possible Boolean functions are the constant functions 0 and 1, plus the the identity and "not" listed above, which can both clearly be calculated in a neural network with one input, one output, and no activation function.
+This section will start by demonstrating hand-built neural networks to calculate any Boolean function $f:\left\{0, 1\right\}^n \rightarrow \left\{0, 1\right\}$ given the outputs $\left(u_0, \dots, u_{2^n-1}\right)$. We then build neural networks to calculate \textit{all} Boolean functions $f:\left\{0, 1\right\}^n \rightarrow \left\{0, 1\right\}$ simultaneously, given $n$. We then consider how the architecture of particular networks may be adapted to increase their efficiency. Note, that we consider the case $n=1$ to be trivial: the possible Boolean functions are the constant functions $f(x) = 0$ and $f(x) = 1$, plus the logical operators "not" and the identity, which can both clearly be calculated in a neural network with one input, one output, and no activation function.
 
 \section{Methods}
 
 The methods described in this section are implemented in the file \url{https://github.com/HectorLeitch/mas6041/blob/main/code/bool.py}.
 
-\subsection{A 2-dimensional Model}\label{bool:2d}
+\subsection{A 2-input Model}\label{bool:2d}
 
-We start by building a neural network with manually assigned weights for the case where $n=2$. Therefore, we specify a function using a list $\left(u_0, u_1, u_2, u_3\right)$ and the goal is to build a neural network to calculate $f(x, y)$ given $\left(x, y\right) \in \left\{0, 1\right\}^2$, by calculating and manually assigning the weights of the network.
+We start by building a neural network with mathematically deduced weights for the case where $n=2$. Therefore, we specify a function using a list of required outputs $\left(u_0, u_1, u_2, u_3\right)$ and the goal is to build a neural network to calculate $f(x, y)$ given $\left(x, y\right) \in \left\{0, 1\right\}^2$, by calculating and manually assigning the weights of the network.
 
 As we have set $n=2$, we have $2^n = 4$ elements in a given output list $\left(u_0, u_1, u_2, u_3\right)$. According to the ordering from \verb|itertools.product()|, this implies that $f(0, 0) = u_0, f(0, 1) = u_1, f(1, 0) = u_2$ and $f(1, 1) = u_3$.
 
-We find that
+We find \footnote{This result was kindly provided by my supervisor in a set of notes introducing me to this problem.} that
 \begin{align} \label{bool:eq1}
 f(x, y) = u_0 + \left(u_2 - u_0\right)x + \left(u_1 - u_0\right)y + \left(u_3 - u_2 - u_1 + u_0\right)xy. 
 \end{align}
@@ -279,18 +288,20 @@ This implies a dense layer $\mathcal{L}^{\left[1\right]}$ with ReLU activation f
 \right)_+.
 \end{align}
 
+\newpage
+
 The full model is then given by
 \begin{align*}
 f(x, y) = \mathcal{L}^{\left[2\right]}\left(\mathcal{L}^{\left[1\right]}\left(x, y\right)\right).
 \end{align*}
 
-\subsection{Generalization to Higher Dimensions}\label{bool:gen}
+\subsection{Generalization to Higher Input Dimensions}\label{bool:gen}
 
-In order to generalize this model for any positive integer $n$, we generalize equations \ref{bool:eq3} and \ref{bool:eq1}.
+To generalize this model to any positive integer $n$, we generalize equations \ref{bool:eq3} and \ref{bool:eq1}.
 
-First, we generalize equation \ref{bool:eq3} corresponding to the first layer. Suppose that $x_1, ..., x_k \in \left\{0, 1\right\}$. Then
+First, we generalize equation \ref{bool:eq3} corresponding to the first layer. Suppose that $x_1, ..., x_n \in \left\{0, 1\right\}^n$ for any $n \geq 2$. Then
 \begin{align}\label{bool:eq5}
-\prod_{i=1}^{k} x_i = \left(\sum_{i=1}^{k} x_i - \left(k - 1\right)\right)_+.
+\prod_{i=1}^{n} x_i = \left(\sum_{i=1}^{n} x_i - \left(n - 1\right)\right)_+.
 \end{align}
 
 Therefore, we can map $\left(x_1, \dots, x_n\right)$ to the product $\prod_{j \in J} x_j$ for any subset $J \subseteq \left\{1, \dots, n\right\}$ in a dense layer with ReLU activation function. In the first layer of the generalized model, we will map $\left(x_1, \dots, x_n\right)$ to all such products to give us $\left(x_1, \dots, x_n, x_1x_2, x_1x_3, \dots, \prod_{i=1}^n x_i\right)$ as input to the second layer.
@@ -315,11 +326,11 @@ a_2 &= f(0, 1) - f(0, 0), \\
 a_3 &= f(1, 1) - f(1, 0) - f(0, 1) - f(0, 0).
 \end{align*}
 
-This pattern suggests that we can write $f(x_1, ..., x_n)$ as a polynomial where the coefficients $a_0, ..., a_{2^n-1}$ will follow from applying the Inclusion-Exclusion Principle, described in appendix [ref]. Adjusting the notation, suppose we have the coefficients $u_I$ for subsets $I \subseteq N = \left\{0, \dots, n-1\right\}$ and we wish to derive the corresponding coefficients $a_I$. From the Inclusion-Exclusion Principle, we set
+This pattern suggests that we can write $f(x_1, ..., x_n)$ as a polynomial where the coefficients $a_0, ..., a_{2^n-1}$ will follow from applying the Inclusion-Exclusion Principle, described in appendix \ref{apx:inc}. Adjusting the notation, suppose we have the coefficients $u_I$ for subsets $I \subseteq N = \left\{0, \dots, n-1\right\}$ and we wish to derive the corresponding coefficients $a_I$. From the Inclusion-Exclusion Principle, we set
 \begin{align*}
     a_I = \sum_{J \subseteq I} \left(-1\right)^{|I \backslash J|} u_J.
 \end{align*}
-For example, when $n=2$ we have $a_{\left\{0,1\right\}} = u_{\left\{0,1\right\}} - u_{\left\{0\right\}} - u_{\left\{1\right\}} + u_{\emptyset}$. This yields the coefficients $a_0, ..., a_{2^n-1}$ through mapping $\mathcal{P}\left(N\right)$ to $\left\{0, \dots, 2^n-1\right\}$. In the code, we have reached the same coefficients through algorithm \ref{bool:alg}.
+For example, when $n=2$ we have $a_{\left\{0,1\right\}} = u_{\left\{0,1\right\}} - u_{\left\{0\right\}} - u_{\left\{1\right\}} + u_{\emptyset}$. This yields the coefficients $a_0, ..., a_{2^n-1}$ through mapping the power set $\mathcal{P}\left(N\right)$ to $\left\{0, \dots, 2^n-1\right\}$. In the code, we have reached the same coefficients through Algorithm \ref{bool:alg}.
 
 \begin{algorithm}
 \caption{Algorithm for determining coefficients}\label{bool:alg}
@@ -353,7 +364,7 @@ Recall that in equation \ref{bool:eq2}, we wrote the second layer calculation in
 \begin{align*}
     f(\pmb{x}) = \mathbf{W}\pmb{x}^* + \pmb{b},
 \end{align*}
-where $\pmb{x}^*$ is the output of the first layer. The weights matrix in this example is a row vector
+where $\pmb{x}^*$ is the output of the first layer. The weights matrix in the 2-input example is a row vector
 \begin{align*}
 \begin{pmatrix}
     u_0 \\
@@ -363,22 +374,22 @@ where $\pmb{x}^*$ is the output of the first layer. The weights matrix in this e
     \dots
 \end{pmatrix}^T,
 \end{align*}
-which we could consider as a matrix with $2^n$ columns and 1 row. If we replaced each entry in the list $\left(u_0, ..., u_{2^n-1}\right)$ with a column vector in $\mathbb{R}^m$, we can calculate the rows of the weights matrix as in algorithm \ref{bool:alg} using vector addition/subtraction. Similarly, the bias is set to $\pmb{u}_0$.
+which we could consider as a matrix with $2^n$ columns and 1 row. If we replace each entry in the list $\left(u_0, ..., u_{2^n-1}\right)$ with a column vector in $\mathbb{R}^m$, we can calculate the rows of the weights matrix as in algorithm \ref{bool:alg} using vector addition/subtraction. Similarly, the bias is set to $\pmb{u}_0$.
 
 \section{Results}
 
 The models described above are demonstrated in the Jupyter notebook \url{https://github.com/HectorLeitch/mas6041/blob/main/try_bool.ipynb}. The notebook is split into examples to demonstrate the code, which are described in the following paragraphs.
 
 \begin{exa}
-The function \verb|make_u_model(u=)| builds a 2-dimensional model from a list $\pmb{u} \in \left\{0, 1\right\}^2$. The model evaluates $f(x)$ for a given $x \in \left\{0, 1\right\}$.
+The function \verb|make_u_model(u=)| builds a 2-input model from a list $\pmb{u} \in \left\{0, 1\right\}^4$. The model evaluates $f(x)$ for a given $x \in \left\{0, 1\right\}^2$.
 
-We also verify that the model weights for each layer are as described in section \ref{bool:2d}. We note that the weights shown tend to be the transpose of the weights that we have described, as the matrix multiplication for an input and weights matrix tends to be calculated as $\pmb{x}^T\mathbf{W}$ rather than $\mathbf{W}\pmb{x}$.
+We also verify that the model weights for each layer are as described in section \ref{bool:2d}. We note that the weights shown are the transpose of the weights that we have described, as the matrix multiplication for an input and weights matrix tends to be calculated as $\pmb{x}^T\mathbf{W}$ rather than $\mathbf{W}\pmb{x}$.
 \end{exa}
 
 \begin{exa}
-The function \verb|make_u_model(u=)| can also build n-dimensional models as described in section \ref{bool:gen} from a list $\pmb{u} \in \left\{0, 1\right\}^n$. The code is set up to randomly generate $\pmb{u}$ where each entry is 0 or 1 with probability 1/2. We note that for a "practical" run time (i.e. $<1$ minute), $n$ should be somewhere between 2 and 8.
+The function \verb|make_u_model(u=)| can also build n-input models as described in section \ref{bool:gen} from a list $\pmb{u} \in \left\{0, 1\right\}^{2^n}$. The code is set up to randomly generate $\pmb{u}$ where each entry is 0 or 1 with probability 1/2. We note that for a "practical" run time (i.e. $<1$ minute), $n$ should be somewhere between 2 and 8.
 
-The model summary is shown to verify that the number of parameters in each layer, which should be $\left(n+1\right)*\left(2^n-1\right)$ for the first layer, and $2^n$ for the second layer.
+The model summary is shown to verify the number of parameters in each layer, which should be $\left(n+1\right)*\left(2^n-1\right)$ for the first layer, and $2^n$ for the second layer.
 
 We verify that this model correctly evaluates $f(\pmb{x})$ for \textit{all} $2^n$ possible values of $\pmb{x}$, using the model's \verb|evaluate()| method, yielding a total loss of 0 and an accuracy of 1.
 \end{exa}
@@ -395,9 +406,9 @@ We verify that this model correctly evaluates \textit{all} $f(\pmb{x})$ for all 
 
 \subsection{Model Architecture}
 
-In this chapter we only used model architectures with two layers, which turned out to be sufficient for all the models implemented due to results \ref{bool:eq3} and its generalized form \ref{bool:eq5}. Equation \ref{bool:eq3} is of particular interest as for two Boolean values $x$ and $y$, the product $xy$ is equal to $\left(x \land y\right)$, and this can be computed in just a single ReLU layer. We will see this result used often in later hand-built models.
+In this chapter we only used model architectures with two layers, which we found to be sufficient for all the models implemented due to results \ref{bool:eq3} and its generalized form \ref{bool:eq5}. Equation \ref{bool:eq3} is of particular interest as for two Boolean values $x$ and $y$, the product $xy$ is equal to $\left(x \land y\right)$, and this can be computed in just a single ReLU layer. We will see this result used often in later hand-built models.
 
-Within the first layer, the weights were simple to assign and were independent of the function $f$ (equivalently, the vector $\pmb{u}$). On the other hand, the second layer had a much higher computational and memory cost, both in assigning the weights and evaluating the network. The algorithm we used to assign the weights may not have been very efficient, and grows in cost at a rate of at least $\mathcal{O}\left(2^n\right)$. For the model described in section \ref{bool:sim}, the number of weights in the second layer also grew excessively fast with $n$, which limited the Python implementation to small values of $n$.
+Within the first layer, the weights were simple to assign and were independent of the Boolean function to be computed. On the other hand, the second layer had a much higher computational and memory cost, both in assigning the weights and evaluating the network. The algorithm we used to assign the weights may not have been very efficient, and grows in cost at a rate of at least $\mathcal{O}\left(2^n\right)$. For the model described in section \ref{bool:sim}, the number of weights in the second layer also grew quickly with $n$, which limited the Python implementation to small values of $n$.
 
 \subsection{Possible Improvements}
 
@@ -407,7 +418,7 @@ f(x, y) = \left(x - y\right)_+ - \left(y - x\right)_+.
 \end{align*}
 This slightly reduces the number of weights required as the first layer only needs 2 outputs.
 
-Another possible avenue for building these kinds of functions is to use combinations of logic gates. A logic gate is a device that performs a Boolean function, with the most commonly used example being electrical transistor gates in computer chips. The NAND gate can be written as $\lnot\left(x \land y\right) = 1 - xy = 1 - \left(x + y - 1\right)_+$. This is a \textit{universal} logic gate as it can be used to create all other logical gates.
+Another possible avenue for building these kinds of functions is to use combinations of logic gates. A logic gate is a device that performs a Boolean function, with the most commonly used example being electrical transistor gates in computer chips. The "Not And" (NAND) gate can be written as $\lnot\left(x \land y\right) = 1 - xy = 1 - \left(x + y - 1\right)_+$. This is a \textit{universal} logic gate as it can be used to create all other logical gates.
 
 For example, the function $f(\pmb{x}) = \left(x_1 \land x_2\right) \lor \left(x_3 \land x_4\right)$ can be summarized as
 \begin{align*}
@@ -420,7 +431,7 @@ This would require three total NAND gates, which could be spread over four layer
 
 \section{Introduction}
 
-Piece-wise linear functions are a common tool for approximation, and can arise in applications such as linear interpolation of a data set, or local regression models such as a LOESS \citep{cleveland1979robust}. This chapter explores to what extent neural networks are able to calculate piece-wise linear functions.
+Piece-wise linear functions are a common tool for approximation, and can arise in applications such as linear interpolation of a data set or local regression models such as locally estimated scatterplot smoothing (LOESS) \citep{cleveland1979robust}. This chapter explores to what extent neural networks are able to calculate piece-wise linear functions.
 
 We consider a function $f: \mathbb{R}^d \rightarrow \mathbb{R}$ to be a \textit{piece-wise linear function} if it is a function with finitely many corners, and between each of the corners the function is linear. For $d=1$, that is to say that there are real numbers $a_1, \dots, a_r$, gradients $m_0, \dots, m_r$, and an intercept $c$ such that:
 \begin{itemize}
@@ -434,19 +445,19 @@ For general $d \geq 1$, we can at first restrict ourselves to cases where the co
 \begin{itemize}
     \item $f(\pmb{x}) = c + \pmb{m}_0^T \pmb{x}$ where $x_i \leq a_{1,i}$ for $i=1, \dots, d$.
     \item $f(\pmb{x})$ has gradient $\pmb{m}_i$ on the box with the "bottom" corner $\pmb{a}_i$.
-    \item $f(\pmb{x})$ has gradient $\pmb{m}_r$ where $x_i \geq a_{r,i}$ for $i=1, \dots, d$.
+    \item $f(\pmb{x})$ has gradient $\pmb{m}_{r^*}$ where $x_i \geq a_{r,i}$ for $i=1, \dots, d$.
     \item The gradients $\pmb{m}_0, \dots, \pmb{m}_{r^*}$ are such that $f$ is continuous. We will ensure this through constructing the corners and gradients as the Cartesian product of vectors of real numbers $\left(a_{1,1}, \dots, a_{1, r_1}\right), \dots, \left(a_{d, 1}, \dots, a_{d, r_d}\right)$ and $\left(m_{1,0}, \dots, m_{1, r_1}\right), \dots, \left(m_{d, 0}, \dots, m_{d, r_d}\right)$ respectively.
 \end{itemize}
 
-This section will start by implementing hand-built neural networks to evaluate linear piece-wise functions. We then experiment with training neural networks to determine how well they are able to approximate $f$ and whether they arrive at the same model as the hand-crafted ones when using the same architecture.
+This section will start by implementing hand-crafted neural networks to evaluate linear piece-wise functions. We then experiment with training neural networks to determine how well they are able to approximate $f$ and whether they arrive at the same model as the hand-crafted ones when using the same architecture.
 
 \section{Methods}
 
 The methods described in this section are implemented in the file \url{https://github.com/HectorLeitch/mas6041/blob/main/code/piecewise.py}.
 
-\subsection{A 1-dimensional Model}\label{piece:1d}
+\subsection{A 1-input Model}\label{piece:1d}
 
-We start by building a neural network with manually assigned weights for the case where $d=1$. Therefore, we specify a function $f: \mathbb{R} \rightarrow \mathbb{R}$ given two lists of real numbers $\left(a_1, \dots, a_r\right)$ and $\left(m_0, \dots, m_r\right)$, and a real number $c$, as described above. The goal is to build a neural network to calculate $f(x)$ given $x \in \mathbb{R}$.
+We start by building a neural network with mathematically deduced weights for the case where $d=1$. Therefore, we specify a function $f: \mathbb{R} \rightarrow \mathbb{R}$ given two lists of real numbers $\left(a_1, \dots, a_r\right)$ and $\left(m_0, \dots, m_r\right)$, and a real number $c$, as described above. The goal is to build a neural network to calculate $f(x)$ given $x \in \mathbb{R}$.
 
 To determine a suitable network architecture, we can think of evaluating $f(x)$ by starting at $x = -\infty$, and "following" the gradient $m_0$ until we reach $x = a_1$. We then follow the gradient $m_1$ until we reach $x = a_2$, and so on, until we reach the value of $x$ we wish to evaluate $f(x)$ at (stopping earlier if $x < a_2$ or $x < a_1$), and then adding the constant $c$. With this in mind, we can write
 \begin{align}\label{piece:eq1}
@@ -472,15 +483,8 @@ f(x) = c + m_0 x &+ m_1 \left(x - a_1\right) I(x \geq a_1) - m_0 \left(x - a_1\r
 \end{split}
 \end{align}
 
-We can now set up a neural network with two dense layers to evaluate this formula. The first layer $\mathcal{L}^{\left[1\right]}$ will be a dense layer to map $x$ to the vector
+We can now construct a neural network with two dense layers to evaluate this formula. The first layer $\mathcal{L}^{\left[1\right]}$ will be a dense layer to map $x$ to the vector
 \begin{align*}
-\begin{pmatrix}
-    \left(x\right)_+ \\
-    \left(-x\right)_+ \\
-    \left(x - a_1\right)_+ \\
-    \dots \\
-    \left(x - a_r\right)_+
-\end{pmatrix} =
 \begin{pmatrix}
     x\ \\
     -x \\
@@ -539,12 +543,14 @@ where
 \end{align*}
 and
 \begin{align*}
-\pmb{b}_2 = c.
+\pmb{b}_2 = c,
 \end{align*}
+noting that the bias vector $\pmb{b}_2$ is a single real value as there is only one output, which will be the case throughout this chapter.
 
-\subsection{Generalization}\label{piece:nd}
 
-Now suppose that we want our neural network to evaluate $f:\mathbb{R}^2 \rightarrow \mathbb{R}$, where $f$ is defined by the points $\left(a_{1,i}, a_{2,j}\right)$ where $i=1, \dots, r_1$ and $j=1, \dots, r_2$, gradients $\left(m_{1,i}, m_{2,j}\right)$ where $i=0, \dots, r_1$ and $j=0, \dots, r_2$, and a constant $c$. Now $f$ has gradients $\left(m_{1,i}, m_{2,j}\right)$ on rectangles $\left[a_{1,i}, a_{1,i+1}\right] \times \left[a_{2,j}, a_{2,j+1}\right]$ for $i=1, \dots, r_1 - 1$ and $j=1, \dots, r_2 - 1$. Similar to the 1-dimensional case when the arguments tend to $\pm \infty$, it has gradients
+\subsection{Generalization to Higher Input Dimensions}\label{piece:nd}
+
+Now suppose that we want our neural network to evaluate $f:\mathbb{R}^2 \rightarrow \mathbb{R}$, where $f$ is defined by the points $\left(a_{1,i}, a_{2,j}\right)$ where $i=1, \dots, r_1$ and $j=1, \dots, r_2$, gradients $\left(m_{1,i}, m_{2,j}\right)$ where $i=0, \dots, r_1$ and $j=0, \dots, r_2$, and a constant $c$. Now $f$ has gradients $\left(m_{1,i}, m_{2,j}\right)$ on rectangles $\left[a_{1,i}, a_{1,i+1}\right] \times \left[a_{2,j}, a_{2,j+1}\right]$ for $i=1, \dots, r_1 - 1$ and $j=1, \dots, r_2 - 1$. Similar to the 1-dimensional case when the arguments tend to $\pm \infty$, it has gradients:
 \begin{itemize}
     \item $\left(m_{1,0}, m_{2,j}\right)$ for regions $\left(-\infty, a_{1,1}\right] \times \left[a_{2,j}, a_{2,j+1}\right]$ where $j=1, \dots, r_2 - 1$
     \item $\left(m_{1,r_1}, m_{2,j}\right)$ for regions $\left[a_{1, r_1}, \infty\right) \times \left[a_{2,j}, a_{2,j+1}\right]$ where $j=1, \dots, r_2 - 1$
@@ -634,15 +640,15 @@ For an experiment to test how well a model with this layer architecture is able 
 \end{align*}
  A graph of this function produced by the exact 1-dimensional model is shown in figure \ref{piece:ex_3_1}.
 
- The exact model is constructed according to section \ref{piece:1d}. The approximate model is initialized by cloning the exact model, to replicate the layer architecture, and compiling the model. Compiling the model does three things: Firstly, it initializes random weights and biases from which to begin the training. Secondly, it allows us to assign the loss function for training; this is set to the mean squared error or MSE defined as
+ The exact model is constructed according to section \ref{piece:1d}. The approximate model is initialized by cloning the exact model, just to replicate the layer architecture, and compiling the model. Compiling the model does three things: Firstly, it initializes random weights and biases from which to begin the training. Secondly, it allows us to assign the loss function for training; this is set to the mean squared error (MSE) defined as
  \begin{align*}
-     MSE\left(\pmb{y}, \hat{\pmb{y}}\right) = \sum_{i=1}^n \left(y_i - \hat{y}_i\right)^2.
+     MSE\left(\pmb{y}, \hat{\pmb{y}}\right) = \frac{1}{n}\sum_{i=1}^n \left(y_i - \hat{y}_i\right)^2.
  \end{align*}
  Thirdly, it allows us to assign the optimizer for the training procedure, which is Adam as discussed in section \ref{intro:train}. This assignment includes setting the learning rate. The experiment was repeated with various learning rates until one which seemed to work reasonably well was found.
 
- Training data for the model was created by evaluating the exact model on 100 points evenly distributed over the interval $\left[-10, 10\right]$.
+ Training data for the model was created by evaluating the exact model on 100 points evenly distributed over the interval $\left[-10, 10\right]$, ensuring there were no parts of the domain where data was unavailable.
 
- The model was essentially allowed to train for as many epochs as was required by setting the number of epochs to 10000, and using early stopping criteria which monitored the loss, stopping training if no improvement had been observed for 20 epochs. The batch size was left as the default value of 32.
+ The model was essentially allowed to train for as many epochs as was required by setting the number of epochs to 10000, and using an early stopping criterion which monitored the loss, stopping training if no improvement had been observed for 20 epochs. The batch size was left as the default value of 32.
 
 \section{Results}
 
@@ -651,12 +657,7 @@ The models described above are demonstrated in the Jupyter notebook \url{https:/
 \begin{exa}
 The function \verb|make_oned_model(a=,m=,c=)| builds a 1-dimensional model from two lists of real numbers $\left(a_1, \dots, a_r\right)$ and $\left(m_0, \dots, m_r\right)$, and a real number $c$.
 
-\begin{figure}[H]\label{piece:ex_3_1}
-\begin{center}
-\includegraphics[width=14cm]{ex_3_1.png}
-\end{center}
-\caption{A plot produced using the exact model described in section \ref{piece:1d}. The plot was produced by evaluating the network on a set of 1000 points evenly spaced between the limits, as is commonly done so in programming to produce a line plot of a function.}
-\end{figure}
+
 
 Figure \ref{piece:ex_3_1} shows an example of the plot produced by the exact model with the values
 \begin{align*}
@@ -665,6 +666,13 @@ Figure \ref{piece:ex_3_1} shows an example of the plot produced by the exact mod
     c &= 1.
 \end{align*}
 This is the same function that is used as the basis for training the approximate model.
+
+\begin{figure}[H]\label{piece:ex_3_1}
+\begin{center}
+\includegraphics[width=14cm]{ex_3_1.png}
+\end{center}
+\caption{A plot produced using the exact model described in section \ref{piece:1d}. The plot was produced by evaluating the network on a set of 1000 points evenly spaced between the limits, as is commonly done so in programming to produce a line plot of a function.}
+\end{figure}
 \end{exa}
 
 \begin{exa}
@@ -672,7 +680,7 @@ The function \verb|make_nd_model(a=,m=,c=)| builds a $d$-dimensional model from 
 
 \begin{figure}[H]\label{piece:ex_3_2}
 \begin{center}
-\includegraphics[width=12cm]{ex_3_2.png}
+\includegraphics[width=10cm]{ex_3_2.png}
 \end{center}
 \caption{A plot produced using the exact model described in section \ref{piece:nd}. In this case, $d=2$. The network was again evaluated at each point in a grid, formed by crossing two sets of 1000 points between the limits for each axis.}
 \end{figure}
@@ -698,7 +706,7 @@ It was found that the model was able to replicate the function $f$ to various de
 \begin{center}
 \includegraphics[width=14cm]{ex_3_3.png}
 \end{center}
-\caption{A collection of models trained as described in section \ref{piece:train}. We can see that some of them are identical, suggesting the same local minimum was reached during training.}
+\caption{A collection of models trained as described in section \ref{piece:train}. We can see that some of them are nearly identical to one another, suggesting that almost the same local minimum was reached during training.}
 \end{figure}
 
 Examining the weights of the trained models, it can be seen that where it is able to match the exact model, the trained model replicated the same weights up to multiplication and division by constants that cancel out between layers to arrive at the same result. This was only true for the intervals where a match was achieved. In some cases it can be seen that the model missed some of the corners and replaced multiple intervals with a single slope. When this happened, there were weights that were set close to 0 across the layers, which caused corner points to disappear from the resulting plots.
@@ -713,27 +721,30 @@ For the generalization we applied in this chapter, it was required that we divid
     f(x,y) = \left(\sqrt{2}\left(\frac{\sqrt{2}\left(x+y\right)}{2}\right) + 0 \left(\frac{\sqrt{2}\left(y-x\right)}{2}\right)\right)_+.
 \end{align*}
 
-It seems that we would be able to use this trick in any case where the domain is divided into (hyper-)rectangles with some linear transformation applied.
+It is possible to use this technique in any case where the domain is divided into (hyper-)rectangles with some linear transformation applied.
 
-Another case of interest to consider would be dividing $\mathbb{R}^2$ into triangles, as this is a technique that is used to draw surfaces in computer graphics. It seems unlikely that the strategy we have used would work in this case, as the three boundaries of a triangle would mean that at least one of them is dependent on both variables, for any linear transformation that could be applied.
+Another case of interest to consider would be to divide $\mathbb{R}^2$ into triangles, as this is a technique that is used to draw surfaces in computer graphics. The technique we have used would not work in this case, as the three boundaries of a triangle would mean that at least one of them is dependent on both variables, for any linear transformation that could be applied.
 
 Overall, the cases in which we are able to build a model are very restricted and it did not seem that we would easily be able to implement more flexible models without spending time researching the properties of piece-wise functions, moving away from the focus of the project.
 
 \subsection{Approximate Models}
 
-The aim of the training experiment was to see how well a model with the same layer architecture could replicate the exact model weights and biases. Visually, it was clear that the model was exactly or nearly-exactly matching the exact model in some cases. As the weights also matched the exact model in these cases, we were satisfied that the exact structure could be found through training.
+The aim of the training experiment was to see how well a model with the same layer architecture could replicate the exact model weights and biases. Visually, it was clear that the model was exactly or nearly-exactly matching the exact model in some cases. As the weights also matched the exact model in these cases, we can be satisfied that the exact structure could be found through training.
 
 As this result was confirmed with little effort put into optimizing the training, it could be possible that there were factors that we did not consider that would have improved the reliability of the training in order to match the exact model more often, such as adding a learning rate schedule or modifying the batch size. It appears that the random initialization may have caused the model to converge to local minima in some cases; further experimentation would be needed to identify these and determine whether they could be avoided in favour of the global minimum (exact match).
 
-Optimization of the training process may also have been more relevant if this experiment was continued to 2- or 3-dimensional models to see if increasing the number of parameters prevented the model from replicating the exact structure.
+Optimization of the training process may have been more relevant if this experiment was continued to 2- or 3-input models to see if increasing the number of parameters prevented the model from replicating the exact structure.
+
+
+
 
 \chapter{Searching for "zero" and "one"}
 
 \section{Introduction}
 
-This chapter will consider the task of searching for particular words in a string of text. A typical way to process text using neural networks is to use a word tokenizer, where each word is assigned an integer $w$ from 1 to $W$, where $W$ is the total size of the \textit{vocabulary} we have used during training. This integer is then translated into a \textit{one-hot encoded} vector, where the vector is a zero vector of length $W$, apart from the $w$-th entry which is set to 1. Applying a word tokenizer to the input would make searching for particular words in a given text string a trivial task, so the aim of the models implemented in this chapter is to take the input one character at a time.
+This chapter will consider the task of searching for particular words ("zero" and "one") in a string of text. A typical way to process text using neural networks is to use a word tokenizer, where each word is assigned an integer $v$ from 1 to $V$, where $V$ is the total size of the \textit{vocabulary} we have used during training. This integer is then translated into a \textit{one-hot encoded} vector, where the vector is a zero vector of length $V$, apart from the $v$-th entry which is set to 1. Applying a word tokenizer to the input would make searching for particular words in a given text string a trivial task, so the aim of the models implemented in this chapter is to take the input one character at a time.
 
-In general, the neural networks in this chapter will be set up to take a string of one-hot encoded inputs $\left\{\pmb{x}_t\right\}_{t=1}^T$, and produce a series of one-hot encoded outputs $\left\{\pmb{y}_t\right\}_{t=1}^T$, corresponding to the completion of a detected word at input $\pmb{x}_t$. Let $o_m: \left\{1, \dots, m\right\} \rightarrow \left\{0, 1\right\}^m$ denote one-hot encoding, where the one-hot encoded vector $o_m(n)$ in $\left\{0,1\right\}^m$ is 1 in the $n$-th position and 0 everywhere else. Also if $n=0$ or no "detection" has been made, we set the output will be a zero vector of length $m$.
+In general, the neural networks in this chapter will be set up to take a sequence of one-hot encoded inputs $\left\{\pmb{x}_t\right\}_{t=1}^T$ representing a string of characters, and produce a sequence of one-hot encoded outputs $\left\{\pmb{y}_t\right\}_{t=1}^T$, each of length 2, corresponding to the completion of a detected word at input $\pmb{x}_t$. For any positive integer $m$, let $o_m: \left\{1, \dots, m\right\} \rightarrow \left\{0, 1\right\}^m$ denote one-hot encoding, where the one-hot encoded vector $o_m(n)$ in $\left\{0,1\right\}^m$ is 1 in the $n$-th position and 0 everywhere else. Also if $n=0$ or no "detection" has been made, we set the output will be a zero vector of length $m$.
 
 The overall strategy is to replicate a finite state machine, which reads each character one by one and changes between a finite number of \textit{states} according to the inputs received, with some of these states triggering an output when a word is detected.
 
@@ -756,7 +767,7 @@ We start by building a network to detect two words: "zero" and "one". For simpli
         o_7(7) & \text{otherwise}.
     \end{cases}
 \end{align*}
-This reduction in size allows us to create the weights in the first layer by hand without dealing with the large weights matrix required to process one-hot encoded inputs of size 128. The columns can then be translated into the full model.
+This reduction in size allows us to derive the weights in the first layer without dealing with the large weights matrix required to process one-hot encoded inputs of size 128. The columns can then be translated into the full model.
 
 This problem could be tackled with a finite state machine with the states
 \begin{center}
@@ -766,7 +777,7 @@ The model would then follow a set of transition rules. Starting in the \textit{b
 
 As we are dealing with a sequence of inputs, the first layer $\mathcal{L}^{\left[1\right]}$ of the neural network will be a recurrent layer. In order to replicate the transition rules of the finite state machine, we need to account for the fact that the state of the recurrent layer is initialized without any input, and then each subsequent output is dependent on both an input and the previous output. We have constructed the output vector representing the states as
 \begin{align*}
-    \mathcal{L}^{\left[1\right]}\left(\pmb{x}_t\right)
+    \mathcal{L}^{\left[1\right]}\left(\pmb{x}_t\right) =
     \begin{pmatrix}
         \pmb{p}_t \in \left\{0,1\right\}^7 \\
         \pmb{q}_t \in \left\{0,1\right\}^2 \\
@@ -796,7 +807,7 @@ The overall construction of the weights is designed to consider the possible sta
 -1 & 1 & 1 & 1 & 1 & 1 & 1
 \end{pmatrix}.
 \end{align*}
-In $\mathbf{W}_1$, each column corresponds to a value in the input and each row corresponds to a value in the resulting output state. The entries determine adjustments to each value of the output state depending on which input is received. The first column indicates that when $w_t$ is a space, both one-hot states of $\pmb{q}_t$ are possible (rows 8 and 9), and furthermore that the blocking indicator $r_t$ should be reduced from 1 to 0 as a new sequence may start following the space. The next five columns correspond to possible states of $\pmb{p}_t$ where letter sequences have been detected, and $r_t$ is set to 1 to prevent a new sequence starting. The final column resets $\pmb{p}_t$ if $w_t$ is any other character, and also sets $r_t$ to 1.
+In $\mathbf{W}_1$, each column corresponds to a possible value in the input and each row corresponds to a possible value in the resulting output state. The entries determine adjustments to each value of the output state depending on which input is received. The first column indicates that when $w_t$ is a space, both one-hot states of $\pmb{q}_t$ are possible (rows 8 and 9), and furthermore that the blocking indicator $r_t$ should be reduced from 1 to 0 as a new sequence may start following the space. The next five columns correspond to possible states of $\pmb{p}_t$ where letter sequences have been detected, and $r_t$ is set to 1 to prevent a new sequence starting. The final column resets $\pmb{p}_t$ if $w_t$ is any other character, and also sets $r_t$ to 1.
 
 The weights matrix applied to the previous state $\mathcal{L}^{\left[1\right]}\left(\pmb{x}_{t-1}\right)$ is
 \begin{align}
@@ -814,7 +825,7 @@ The weights matrix applied to the previous state $\mathcal{L}^{\left[1\right]}\l
 0 & 0 &  0 & 0 & 0 & 0 & 0 & 0 & 0 &  0
 \end{pmatrix}.
 \end{align}
-In $\mathbf{U}_1$, the rows again correspond a value in the resulting output state, but the entries determine adjustments to each value of the output state depending on which previous output state is received. The columns correspond to a value in the previous output state.
+In $\mathbf{U}_1$, the rows again correspond to possible values in the resulting output state, but the entries determine adjustments to each value of the output state depending on which previous output state is received. The columns correspond to possible values in the previous output state.
 \begin{itemize}
     \item The first column indicates that if the previous state contains $\pmb{p}_{t-1} = o_7(1)$ i.e. the \textit{z} state, then $\pmb{p}_t$ may equal $o_7(1)$ i.e. the \textit{ze} state. The second, fifth, and sixth columns are similar.
     \item The third column indicates that if the previous state contains $\pmb{p}_{t-1} = o_7(3)$ i.e. the \textit{zer} state, then $\pmb{p}_t$ may equal $o_7(4)$  i.e. the \textit{zero} state, and also should not equal $o_7(5)$ i.e. the \textit{o} state.
@@ -840,7 +851,7 @@ We now observe that $\pmb{q}_t$ constitutes a suitable output for the network as
 \end{pmatrix}
 \mathcal{L}^{\left[1\right]}\left(\pmb{x}_t\right),
 \end{align*}
-where the bias is $\mathbf{0}$ and the activation function is the linear activation function.
+where the bias is equal to $\mathbf{0}$ and the activation function is the linear activation function.
 
 \subsection{Full Model}\label{zeroone:full}
 
@@ -914,9 +925,9 @@ In the first model, the third and fifth column of $\mathbf{W}_1$, and the third 
 
 \section{Introduction}\label{letters:intro}.
 
-This chapter will introduce Convolution Neural Networks (CNNs) for processing images. We will build a simple neural network to find letters in an image, and with some additional assumptions, extend it to a neural network that can identify words.
+This chapter will introduce Convolution Neural Networks (CNNs) for processing images. We will build a simple neural network to find letters in an image and, with some additional assumptions, extend it to a neural network that can identify words.
 
-The assumptions we will make throughout this chapter are that an input image $\mathbf{X}$ is a matrix with $w$ columns and $h$ rows, and entries in $\left\{0,1\right\}$ where 0 represents a white pixel and 1 represents a black pixel. Furthermore, the input $\mathbf{X}$ will contain letters from the set $\left\{I, Y, J, C, O, L, H, T, U, X\right\}$, written in uppercase. These letters can be represented by matrices in $M_{3,3}\left\{0,1\right\}$. Denote the matrix representing the letter $a \in \left\{I, Y, J, C, O, L, H, T, U, X\right\}$ as $A_a \in M_{3,3}\left\{0,1\right\}$.
+The assumptions we will make throughout this chapter are that an input image $\mathbf{X}$ is a matrix with $w$ columns and $h$ rows. Each entry in $\mathbf{X}$ takes a value 0 or 1, where 0 represents a white pixel and 1 represents a black pixel. Furthermore, the input $\mathbf{X}$ will contain letters from the set $\left\{I, Y, J, C, O, L, H, T, U, X\right\}$, written in uppercase. These letters can be represented by matrices in $M_{3,3}\left\{0,1\right\}$. Denote the matrix representing the letter $a \in \left\{I, Y, J, C, O, L, H, T, U, X\right\}$ as $A_a \in M_{3,3}\left\{0,1\right\}$.
 
 After building the convolution layer required to detect these letters, we will attach further layers to build models that can keep track of counts of each letter, and recognize words from a given list containing words using only the letters in $\left\{I, Y, J, C, O, L, H, T, U, X\right\}$.
 
@@ -1011,7 +1022,7 @@ To create the first neural network, we combine the kernels $\mathbf{W}_a$ and bi
 
 \subsection{Expanding the Grid}\label{letters:expand}
 
-The previous model was restricted to producing a single output in $\left\{0,1\right\}$ for each channel; the convolution kernels did not move across the spatial dimensions of the input $\mathbf{X}$, as we restricted the size of the input to match the size of the kernels. We now consider inputs $\mathbf{X} \in M_{h,w}\left\{0,1\right\}$, where $w,h > 3$.
+The previous model was restricted to producing a single output in $\left\{0,1\right\}$ for each channel; the convolution kernels did not move across the spatial dimensions of the input $\mathbf{X}$ because we restricted the size of the input to match the size of the kernels. We now consider inputs $\mathbf{X} \in M_{h,w}\left\{0,1\right\}$, where $w,h > 3$.
 
 For this model, some further assumptions will be made about $\mathbf{X}$.
 \begin{itemize}
@@ -1024,7 +1035,7 @@ The first layer of the model is a convolution layer with 10 channels, where the 
 
 As we have assumed that the letters will not overlap, we can then pass the output $\mathcal{L}^{\left[1\right]}\left(\mathbf{X}\right)$ to a max pooling layer. We know each letter can only be present once within each vertical $h \times 3$ slice, so we can set the height of the pool size to $h$ and the width of the pool size to 3. We apply zero padding to $\mathcal{L}^{\left[1\right]}\left(\mathbf{X}\right)$, so the output $\mathcal{L}^{\left[2\right]}\left(\mathbf{X}\right)$ will be of size $1 \times \lfloor w/3 \rfloor$ in each channel. Therefore, as the pool moves across $\mathcal{L}^{\left[1\right]}\left(\mathbf{X}\right)$, the corresponding output will be 1 each time a letter is detected within each corresponding channel.
 
-This output is sufficient to show detection of each letter, but for the following models we will consider reshaping the output into a sequence of $w_g = \lfloor w/3 \rfloor$ vectors, where each vector is in $\left\{0,1\right\}$ and is either $\mathbf{0}$ for no letter detected, or a one-hot encoding of a detected letter. For example, the sequence
+This output is sufficient to show detection of each letter, but for the following models we will consider reshaping the output into a sequence of $w_g = \lfloor w/3 \rfloor$ vectors, where each vector is in $\left\{0,1\right\}^{w_g}$ and is either $\mathbf{0}$ for no letter detected, or a one-hot encoding of a detected letter. For example, the sequence
 \begin{align*}
     &\begin{pmatrix}
         0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0
@@ -1062,13 +1073,13 @@ The first layer following $\mathcal{L}^{\left[2\right]}$ will convert each one-h
 \end{align*}
 so that if $x_t > 0$, it should appear in position $s_t$.
 
-Noting that this is the largest hand-built model we will see, the steps taken following $\mathcal{L}^{\left[2\right]}$ in the first model are tabulated below.
+Noting that this is the largest hand-crafted model we will see, the steps taken following $\mathcal{L}^{\left[2\right]}$ in the first model are tabulated below.
 
 \begin{table}[h!]
 \centering
 \begin{tabular}{ |c|c|c|c| }
  \hline
-  Layer & Type & output shape & output at $t$ \\
+  Layer & Type & Output shape & Output at $t$ \\
  \hline
  $\mathcal{L}^{\left[2\right]}$ & max pooling & $\left(w_g, 10\right)$   & $o_{10}(x_t)$ \\
  $\mathcal{L}^{\left[3\right]}$ & dense & $\left(w_g, 2\right)$ & $\left(x_t, I(x_t > 0)\right)$ \\
@@ -1253,7 +1264,7 @@ We now replace $\mathcal{L}^{\left[8\right]}$ with a slightly modified version $
     \mathbf{0}_{w_g} & \mathbf{1}_{w_g} & \mathbf{0}_{w_g} & \mathbf{I}_{w_g}
 \end{pmatrix}
 \mathcal{L}^{\left[7\right]}\left(\mathbf{X}\right)
-- \mathbf{1}_{w_g}\right)_+,
+- \mathbf{1}_{w_g}\right)_+.
 \end{align*}
 The output of $\mathcal{L}^{\left[8*\right]}$ and $\mathcal{L}^{\left[8\right]}$ will be identical so the final layers are unchanged.
 
@@ -1267,7 +1278,7 @@ The full model takes the integer sequence with non-zero entries shifted to the e
     \end{pmatrix}
     \mathcal{L}^{\left[10\right]}\left(\mathbf{X}\right),
 \end{align*}
-so that each possible output sequence is converted into a unique integer. We then create two dictionaries from a file \verb|words_3x3.txt| which contains a list of words we can make using the letters we have available. This allows us to convert the unique integer into a string containing the detected word, or a special "UNK" token if the word is not in the file.
+so that each possible output sequence is converted into a unique integer. We then create two dictionaries from a file \verb|words_3x3.txt|, available in the Github repository, which contains a list of words we can make using the letters we have available. This allows us to convert the unique integer into a string containing the detected word, or a special "UNK" token if the word is not in the file.
 
 \section{Results}
 
@@ -1276,7 +1287,7 @@ The models described above are demonstrated in the Jupyter notebook \url{https:/
 \begin{exa}
 The function \verb|make_explicit_model()| builds a model to recognize letters given as a $3 \times 3$ image, as described in section \ref{letters:letter}.
 
-We verify that it correctly identifies a single letter input, and furthermore rejects an input (i.e. does not claim to detect any letter) given a randomly generated input that does not happen to be a letter.
+We verify that it correctly identifies a single letter input and, furthermore, rejects an input (i.e. does not claim to detect any letter) given a randomly generated input that does not happen to be a letter.
 
 The function \verb|test_explicit_model()| verifies the model is working correctly on all possible $3 \times 3$ images.
 \end{exa}
@@ -1302,7 +1313,7 @@ The function \verb|make_alt_gru_model(h=,w=)| builds a model to recognize letter
 \begin{exa}
 The function \verb|make_full_model(h=,w=,file=)| builds a model to recognize letters within a $h \times w$ grid, with the modification to the architecture described in section \ref{letters:alt} and the additional layers described in section \ref{letters:full}. 
 
-We supply an input grid using the function \verb|make_ragged_grid(word=)|. An example grid with the input and output words is shown in figure \ref{letters:ex_5_6}.
+We supply an input grid using the function \verb|make_ragged_grid(word=)|. An example grid with the input and output words is shown in figure 5.1.
 
 \begin{figure}[H]\label{letters:ex_5_6}
 \begin{center}
@@ -1316,11 +1327,11 @@ We supply an input grid using the function \verb|make_ragged_grid(word=)|. An ex
 
 \subsection{Model Architecture}
 
-The models in sections \ref{letters:letter}, \ref{letters:expand}, and \ref{letters:count} followed very intuitive architecture, where the weights for the convolution kernels ended up looking like the letters they were trying to detect. This meant that the output node for each letter was activated when the kernels lined up with the corresponding letter in the grid.
+The models in sections \ref{letters:letter}, \ref{letters:expand}, and \ref{letters:count} followed reasonably intuitive architecture, where the weights for the convolution kernels ended up looking like the letters they were trying to detect. This meant that the output node for each letter was activated when the kernels lined up with the corresponding letter in the grid.
 
-The models in sections \ref{letters:words} and \ref{letters:alt} were far more challenging to develop by hand. Difficulties with the Tensorflow shapes meant that initial working models contained further unnecessary layers, which were ultimately replaced by a single dense layer to yield both $x_t$ and $I(x_t > 0)$.
+The models in sections \ref{letters:words} and \ref{letters:alt} were far more challenging to develop. Difficulties with the Tensorflow shapes meant that initial working models contained further unnecessary layers, which were ultimately replaced by a single dense layer to yield both $x_t$ and $I(x_t > 0)$.
 
-The GRU layers were particularly difficult to work with by hand. The original paper published by \citeauthor{DBLP:journals/corr/ChoMGBSB14} matches the Tensorflow implementation, where 
+The GRU layers were particularly difficult to work with when deriving and assigning weights. The original paper published by \citeauthor{DBLP:journals/corr/ChoMGBSB14} matches the Tensorflow implementation, where 
 \begin{align*}
 h_t = z_t \odot h_{t-1} + \left(1 - z_t\right) \odot \hat{h}_t.
 \end{align*}
@@ -1328,7 +1339,7 @@ However, variations such as the minimal gated unit, proposed by \citet{heck2017s
 \begin{align*}
 h_t = \left(1 - z_t\right) \odot h_{t-1} + z_t \odot \hat{h}_t.
 \end{align*}
-The latter is slightly more intuitive to work when working with $z_t \in \left\{0, 1\right\}$, as $z_t$ represents the condition for which we want to update the hidden state $h_t$, which would correspond to the outputs $x_t > 0$ which we are interested in. Overall, the network may have been slightly more efficient if we replaced $I(x_t > 0)$ with $I(x_t = 0)$. Similarly, when implementing equation \ref{bool:eq3} to create values to be used for $z_t$, it would have been possible to do this within the GRU layer using ReLU as the recurrent activation. This would slightly reduce the number of layers and overall weights in the model, although the GRU layers themselves would have been larger due to the increased number of inputs, therefore making this a difficult efficiency to implement.
+The latter is slightly more intuitive when working with $z_t \in \left\{0, 1\right\}$, because $z_t$ represents the condition for which we want to update the hidden state $h_t$, which would correspond to the outputs $x_t > 0$ which we are interested in. Overall, the network may have been slightly more efficient if we had replaced $I(x_t > 0)$ with $I(x_t = 0)$. Similarly, when implementing equation \ref{bool:eq3} to create values to be used for $z_t$, it would have been possible to do this within the GRU layer using ReLU as the recurrent activation. This would slightly reduce the number of layers and overall weights in the model, although the GRU layers themselves would have been larger due to the increased number of inputs, therefore making this a difficult efficiency to implement.
 
 That being said, using the GRU layer in section \ref{letters:alt} provided a much more intuitive way to produce the sequence $\left\{o_{w_g}(s_t)\right\}_{t=1}^{w_g}$ and was a worthwhile improvement over the first model.
 
@@ -1343,20 +1354,20 @@ The functionality of these models could be extended by allowing the images to co
 
 \section{Introduction}
 
-This chapter will explore models that are designed to play noughts and crosses (or tic-tac-toe). We will represent the board using a $3 \times 3$ matrix for each of the two players. For each player, an entry of 0 represents a space where the player has not played a move, and an entry of 1 represents a space where the player has played a move. Denote a board $B$ as $B = \left\{\mathbf{X}_o, \mathbf{X}_x\right\}$, where $\mathbf{X}_o, \mathbf{X}_x \in M_{3,3}\left\{0,1\right\}$. Denote the starting board where all entries are 0 as $B_0$. Furthermore, let $\pmb{x}_p \in \left\{0,1\right\}^9$ denote the vector with the same entries as $\mathbf{X}_p$, in the following order:
+This chapter will explore models that are designed to play noughts and crosses (or tic-tac-toe). We will represent the board using a $3 \times 3$ matrix for each of the two players. For each player, an entry of 0 represents a space where the player has not played a move, and an entry of 1 represents a space where the player has played a move. Denote a board $B$ as $B = \left\{\mathbf{X}_o, \mathbf{X}_x\right\}$, where $\mathbf{X}_o, \mathbf{X}_x \in M_{3,3}\left\{0,1\right\}$ represent the positions currently occupied by player $o$ and player $x$ respectively. Denote the starting board where all entries are 0 as $B_0$. Furthermore, for a player $p \in \left\{o, x\right\}$, let $\pmb{x}_p \in \left\{0,1\right\}^9$ denote the vector with the same entries as $\mathbf{X}_p$, in the following order:
 \begin{align*}
     \begin{pmatrix}
         0 & 1 & 2 \\
-        3 & 4 & 4 \\
+        3 & 4 & 5 \\
         6 & 7 & 8 \\
     \end{pmatrix}.
 \end{align*}
 
-A game is played as follows. The board starts as $B = B_0$. Player $p$ selects an integer $i \in \left\{0, \dots, 8\right\}$ and updates the board $B$ by updating the $i$-th entry of $\pmb{x}_p$ from 0 to 1. The player $p$ then changes from $o$ to $x$ or vice versa.
+A game is played as follows. The board starts as $B = B_0$ and the value $p$, denoting the current player, is set to $o$ to begin the game. Player $p$ selects an integer $i \in \left\{0, \dots, 8\right\}$ and updates the board $B$ by updating the $i$-th entry of $\pmb{x}_p$ from 0 to 1. The player $p$ then changes from $o$ to $x$ or vice versa.
 
-A player $p$ wins if after the board $B$ is updated on their turn, they have a column, row, or diagonal consisting of three 1s in $\mathbf{X}_p$. In addition, if player $p$ selects $i$ where the $i$-th entry in $\pmb{x}_o$ or $\pmb{x}_x$ is 1 prior to updating $\pmb{x}_p$, then player $p$ loses due to making an \textit{illegal move}. After 9 turns, if neither player has won or lost, the game is a draw.
+A player $p$ wins, if after the board $B$ is updated on their turn, they have a column, row, or diagonal consisting of three 1s in $\mathbf{X}_p$. In addition, if player $p$ selects $i$ where the $i$-th entry in $\pmb{x}_o$ or $\pmb{x}_x$ is 1 prior to updating $\pmb{x}_p$, then player $p$ loses due to making an \textit{illegal move}. After 9 turns, if neither player has won or lost, the game is a draw.
 
-This section will start with an experiment to see how effectively an ANN with dense layers can be trained to play noughts and crosses, and what seems to be the minimum requirements for a network to replicate perfect play. We then repeat the experiment with an intuitive modification to the network architecture to help the network quickly reduce its rate of suggesting illegal moves.
+This section will start with an experiment to see how effectively an ANN with dense layers can be trained to play noughts and crosses, and what seem to be the minimum requirements for a network to replicate perfect play. We then repeat the experiment with an intuitive modification to the network architecture to help the network quickly reduce its rate of suggesting illegal moves.
 
 \section{Methods}
 
@@ -1366,7 +1377,7 @@ The methods described in this section are implemented in the file \url{https://g
 
 In noughts and crosses it is possible (for both players) to play a perfect game. The player who goes first playing perfectly is guaranteed not to lose. If the player going second also plays perfectly, the game will result in a draw; otherwise, the player going first may have the opportunity to win.
 
-We can create a perfect player, against which we can test the neural network players we create. The perfect player follows the algorithm proposed by \citep{crowley1993flexible}:
+We can create a perfect player, against which we can test the neural network players we create. The perfect player follows the algorithm proposed by \citet{crowley1993flexible} at each turn:
 
 \begin{enumerate}
     \item Win if possible: If a player has two in a row and the third position is available, play this position to win the game.
@@ -1380,16 +1391,16 @@ We can create a perfect player, against which we can test the neural network pla
     \item Empty side: If an empty side position is available, play this position.
 \end{enumerate}
 
-Furthermore, with this perfect player, we can generate training data by supplying it with board states and recording the suggested move as the response. We build a data set using the following assumptions:
+Furthermore, with procedural Python code representing this perfect player, we can generate training data by supplying it with board states and recording the suggested move as the response. We build a data set using the following assumptions:
 \begin{itemize}
     \item The board state is one where it is the turn of the player who went first. As such we are teaching our networks exclusively to play first and draw or win only; they do not need to worry about reading the board and figuring out which player's turn it is.
     \item The board state is one which can only be reached through legal moves.
     \item The board state is not a finished game so there is at least one move that can be suggested.
 \end{itemize}
 
-This data set consists of 4519 separate board states. Denote this set of board states as $\mathbf{B}$. We can think of our perfect player as a function $f_{\text{perfect}} : \mathbf{B} \rightarrow \left\{0, \dots, 8\right\}$, where $f_{perfect}\left(B\right)$ is the position from 0 to 8 suggested by the perfect player for any $B \in \mathbf{B}$.
+This data set consists of 4519 separate board states. Denote this set of board states as $\mathbf{B}$. We can think of our perfect player as a function $f_{\text{perfect}} : \mathbf{B} \rightarrow \left\{0, \dots, 8\right\}$, where $f_{perfect}\left(B\right)$ is the position from 0 to 8 suggested by the perfect player for any $B \in \mathbf{B}$. A training dataset is constructed as $\left\{B_i, \pmb{y}_i\right\}_{i=1}^{4519}$, where $\pmb{y}_i = f_{perfect}\left(B_i\right)$.
 
-Note that we have created the function to randomly select one of the four corners to start from so that more board states arise when testing the approximate models against the perfect player. This means that there are four possible entries for $f_{\text{perfect}}\left(B_0\right)$ in the training data which will depend on the random seed when the code is run, but the choice should not affect how the models train and ideally they should be able to handle board states that arise from any possible start.
+Note that we have created the perfect player function to randomly select one of the four corners to start from so that more board states arise when testing the approximate models against the perfect player. This means that there are four possible entries for $f_{\text{perfect}}\left(B_0\right)$ in the training data which will depend on the random seed when the code is run, but the choice should not affect how the models train and ideally they should be able to handle board states that arise from any possible start.
 
 \subsection{Approximate Artificial Neural Networks}
 
@@ -1408,9 +1419,9 @@ Within each $\pmb{y}_i$, only one entry will be 1 and the rest will be 0, so thi
 
 \subsection{Training Procedure}\label{ox:train}
 
-We will use Adam as the training optimizer, with a fixed learning rate that was manually adjusted following training runs. The number of epochs and the batch size was also manually adjusted. An early stopping criteria monitoring the loss would stop training if no improvement was observed for 20 epochs.
+We will use Adam as the training optimizer, with a fixed learning rate that was manually adjusted following training runs. The number of epochs and the batch size was also manually adjusted. An early stopping criterion monitoring the loss would stop training if no improvement was observed for 20 epochs.
 
-As the goal was to find suitable values and not necessarily optimized values, a plot of the loss over time was created after each training run and the parameters were adjusted accordingly. This included whether or not the early stopping criteria had been met. Once it appeared that the values were suitable, the model was tested against a perfect player and a random player to verify that the approximation $f_{\left[20,20\right]}$ was close to $f_{\text{perfect}}$. A model was tested by tabulating the results of 100 games, recording whether any losses were due to illegal moves being suggested.
+As the goal was to find suitable values and not necessarily optimized values, a plot of the loss over time was created after each training run and the parameters were adjusted accordingly. This included whether or not the early stopping criterion had been met. Once it appeared that the values were suitable, the model was tested against a perfect player and a random player to verify that the approximation $f_{\left[20,20\right]}$ was close to $f_{\text{perfect}}$. A model was tested by tabulating the results from 100 games, also recording whether any losses were due to illegal moves being suggested to understand whether this was a particular weakness.
 
 For a given set of training values, the shape of the plot provided guidance on how to adjust the parameters. Where the loss did not consistently decrease over time, showing a jagged shape on the graph with lots of increase and decreases, this indicated that the training process was struggling to find steps that resulted in decreasing the loss. This could suggest that the learning rate was too large, resulting in "over-shooting" when adjusting the weights and biases. Alternatively, this could also suggest that the batch size was not large enough, resulting in inaccurate estimates of the gradient descent direction. Conversely, where the shape of the graph was an extremely smooth decrease that continued all the way to the maximum number of epochs without triggering the stopping criteria, this meant that the model still required more epochs to finish training. This could suggest that the learning rate was too small, and a more appropriate learning rate would reduce the loss more efficiently.
 
@@ -1457,7 +1468,7 @@ The models described above are demonstrated in the Jupyter notebook \url{https:/
 \begin{exa}
 The function \verb|suggest_move(pq=, player=)| is the perfect player. This example simply shows the perfect player against itself, and against a random player. The function \verb|play_match(player_o=, player_x=, bestof=)| plays a match of \verb|bestof| games and records the results. This will be the basis of evaluating model performance in the following examples.
 
-The code verifies that two perfect players draw against each other every time, and that the perfect player beats the random player overwhelmingly often; around 98\% of the time. These facts give us a quick way to evaluate how well an approximate model plays.
+The code verifies that two perfect players draw against each other every time, and that the perfect player beats the random player overwhelmingly often - around 98\% of the time. These facts give us a quick way to evaluate how well an approximate model plays.
 \end{exa}
 
 \begin{exa}
@@ -1471,7 +1482,7 @@ The function \verb|make_simple_model(p=,q=,r=)| builds a model with \verb|p| and
 \end{figure}
 
 The model is trained with the function \verb|train_model_suggestions(M=,epochs=|
-\verb|,batch_size=)|, which trains the model with the given parameters and returns the history of the loss over time, which can be plotted. Figure \ref{ox:ex_6_1} shows a collection of plots where models with 20 nodes in each hidden layer were trained for up to 1000 epochs with a batch size of 64.
+\verb|,batch_size=)|, which trains the model with the given parameters and returns the history of the loss over time, which can be plotted. Figure 6.1 shows a collection of plots where models with 20 nodes in each hidden layer were trained for up to 1000 epochs with a batch size of 64.
 
 The training parameters were adjusted as described in section \ref{ox:train} and a learning rate of 0.02 was chosen with a batch size of 64 and maximum number of epochs of 1000 to be the values for which to carry forward to training further models.
 \end{exa}
@@ -1502,11 +1513,11 @@ Table \ref{ox:t1} shows the total number of draws, wins, and losses for each siz
  \multicolumn{4}{|c|}{D = Draws, W = Wins, L = Losses, I = Losses due to illegal moves} \\
  \hline
 \end{tabular}
-\caption{Full results table for models with two dense layers. The most difficult to explain behaviour is the losses using the argmax activation function, which are either all due to illegal moves or never due to illegal moves.}
+\caption{Full results table for models with two dense layers, where the "vs. Player" row indicates the opponent that the model was tested against. The most difficult to explain behaviour is the losses using the argmax activation function, which are either all due to illegal moves or never due to illegal moves.}
 \label{ox:t1}
 \end{table}
 
-The number of draws against the perfect player and wins against the random player is shown in figure \ref{ox:ex_6_2}. Against both the perfect player and the random player, it appears that the larger models may be performing slightly better.
+The number of draws against the perfect player and wins against the random player is shown in figure 6.2. Against both the perfect player and the random player, it appears that the larger models may be performing slightly better.
 
  Figure \ref{ox:ex_6_3} shows the number of losses due to illegal moves in each match. It appears that in most cases, a loss is due to an illegal move. In the argmax models, it is not clear how some models lose all 100 games without any illegal moves.
 
@@ -1561,7 +1572,7 @@ Table \ref{ox:t2} shows the total number of draws, wins, and losses for each siz
 \begin{center}
 \includegraphics[width=14cm]{ex_6_4.png}
 \end{center}
-\caption{The difference in the overall level of performance from the models using residual connections is especially evident in this figure when compared to figure \ref{ox:ex_6_2}.}
+\caption{The difference in the overall level of performance from the models using residual connections is especially evident in this figure when compared to figure 6.2.}
 \end{figure}
 
 The number of draws against the perfect player and wins against the random player is shown in figure \ref{ox:ex_6_4}, where we can see the significant improvement in the models using the softmax activation function on the output layer compared to the models with only dense layers. From the graph we can also see that the performance appears to be more consistent across the range of layer sizes.
@@ -1639,9 +1650,9 @@ Reinforcement learning is a different approach to training models. Broadly speak
 
 \section{Introduction}
 
-The task of recognizing hand-written digits using neural networks, or other machine learning techniques, is a popular exercise. In particular the MNIST dataset of images of handwritten digits is a well-known dataset that has been used to develop convolution neural networks \citep{ciresan2011convolutional} and support vector machines \citep{platt1998using}, among other machine learning techniques. In this chapter we will create both hand-built and trained neural networks to recognize digits, using a simplified dataset created by drawing pixels into a grid of $6 \times 6$ pixels.
+The task of recognizing hand written digits using neural networks, or other machine learning techniques, is a popular exercise. In particular the MNIST dataset of images of handwritten digits is a well-known dataset that has been used to develop convolution neural networks (CNNs) \citep{ciresan2011convolutional} and support vector machines \citep{platt1998using}, among other machine learning techniques. In this chapter we will create both hand-crafted and trained neural networks to recognize digits, using a simplified dataset created by drawing pixels into a grid of $6 \times 6$ pixels.
 
-The hand-built model uses a convolution layer to identify certain types of pixels as features, which are then counted by another layer and passed to an output layer. Ideas seen in previous chapters are used again in this model. The trained model uses a smaller version of this architecture, and the goal is to try to identify parts of the hand-built model that can be used to enhance the performance of the trained model and increase the efficiency of the training process.
+The hand-crafted model uses a convolution layer to identify certain types of pixels as features, which are then counted by another layer and passed to an output layer. Ideas seen in previous chapters are used again in this model. The trained model uses a smaller version of this architecture, and the goal is to try to identify parts of the hand-built model that can be used to enhance the performance of the trained model and increase the efficiency of the training process.
 
 An image is represented by a matrix $\mathbf{X} \in M_{6,6}\left\{0,1\right\}$, where an entry of 1 represents a black pixel and a 0 represents a white pixel. A valid image containing a digit will have a corresponding label $y \in \left\{0, \dots, 9\right\}$. Each digit will be drawn using horizontal and vertical lines only, and will only be drawn in one "variation". Examples can be seen in figure \ref{digit:fig1}. There are some notable rules for certain digits, with the rest of the digits restricted from only using horizontal and vertical lines.
 
@@ -1658,18 +1669,18 @@ The methods described in this section are implemented in the file \url{https://g
 
 \subsection{Exact Model}
 
-Our first model is a hand-built exact model. This model uses similar ideas to the model created to recognize letters and words. In this case, each digit is broken down into a collection of pixel types that are recognized by convolution kernels applied to the input image, and then the collection of detected pixels of each type are combined to create the correct output.
+Our first model is a hand-crafted exact model. This model uses similar ideas to the model created to recognize letters and words. In this case, each digit is broken down into a collection of pixel types that are recognized by convolution kernels applied to the input image, and then the collection of detected pixels of each type are combined to create the correct output.
 
-The first layer of the neural network is a convolution layer. There are 10 pixel types, shown in figure \ref{digit:fig2}, and so the layer has 10 channels, each with its own convolution kernel. There are three "groups" of pixel types: pixel types 0 to 3 are line ends, pixel types 4 to 7 are corners, and pixel types 8 and 9 are the "T junction" pixels. The assignment of a certain pixel to a particular type applies to the pixel in the middle of the $3 \times 3$ kernel as it passes over the image; as such, we need to design the kernels slightly differently to those in section \ref{letters:letter}, to account for possible variation in the surrounding pixels.
+The first layer of the neural network is a convolution layer. There are 10 pixel types, shown in figure 7.2, and so the layer has 10 channels, each with its own convolution kernel. There are three "groups" of pixel types: pixel types 0 to 3 are line ends, pixel types 4 to 7 are corners, and pixel types 8 and 9 are the "T junction" pixels. The assignment of a certain pixel to a particular type applies to the pixel in the middle of the $3 \times 3$ kernel as it passes over the image; as such, we need to design the kernels slightly differently to those in section \ref{letters:letter}, to account for possible variations in the surrounding pixels.
 
 \begin{figure}[H]\label{digit:fig2}
 \begin{center}
 \includegraphics[width=12cm]{digit_2.png}
 \end{center}
-\caption{All 10 pixel types. Detection of these pixels will differ from in section \ref{letters:letter}, so these should not be thought of as representations of the convolution kernels.}
+\caption{All 10 pixel types. Detection of these pixels will differ from section \ref{letters:letter}, so these should not be thought of as representations of the convolution kernels. Note that the pixel type is assigned to only the pixel at the centre of each image, but is determined by the surrounding pixels.}
 \end{figure}
 
-The convolution kernels are matrices in $M_{3,3}\left\{-1,0,1\right\}$. A 1 is placed in the black positions in figure \ref{digit:fig2}, corresponding to the pixels we expect to find a value of 1 in for each type. A 0 is placed in positions where we may or may not find a value of 1 in the image. For example, the top and bottom- right values are set to 0 in the kernel for pixel type 0, as such a pixel could be found in the image as any member of the set
+The convolution kernels are matrices in $M_{3,3}\left\{-1,0,1\right\}$. A 1 is placed in the black positions in figure 7.2, corresponding to the pixels we expect to find a value of 1 in for each type. A 0 is placed in positions where we may or may not find a value of 1 in the image. For example, the top and bottom- right values are set to 0 in the kernel for pixel type 0, as such a pixel could be found in the image as any member of the set
 \begin{align*}
     \left\{
     \begin{pmatrix}
@@ -1782,7 +1793,7 @@ Finally, there is zero-padding applied to the input in the first convolution lay
 
 The second layer of the model counts the number of occurrences of each pixel type. This is enough to distinguish every digit apart from 2 and 5, which both have one pixel of type 0, 1, 4, 5, 6, and 7. To distinguish 2 and 5, the model must evaluate the relative positions of the pixels of type 4, 5, 6, and 7. While the feature map could be flattened into a 10 vectors of length 36, and provided to a dense layer to perform this step, it is more convenient to use another convolution layer with a $6 \times 6$ kernel for each channel. With no zero-padding, this results in a single output per channel, 10 of which are the counts for the pixel types.
 
-In total, the second layer has 17 output channels. The output of the first layer has 10 channels, so we need to assign the weights for 170 kernels of size $6 \times 6$. For the channel corresponding to the detection of pixel type $i \in \left\{0, \dots, 9\right\}$, the $i$-th kernel will be set to a $6 \times 6$ matrix of ones $\mathbf{1}_{6 \times 6}$ and the other channels will be set to a $6 \times 6$ matrix of zeros $\mathbf{0}_{6 \times 6}$. This counts the number of detected pixels in each channel from the first layer.
+In total, the second layer has 17 output channels and the output of the first layer has 10 channels, so we need to assign the weights for 170 kernels of size $6 \times 6$. For the channel corresponding to the detection of pixel type $i \in \left\{0, \dots, 9\right\}$, the $i$-th kernel will be set to a $6 \times 6$ matrix of ones $\mathbf{1}_{6 \times 6}$ and the other channels will be set to a $6 \times 6$ matrix of zeros $\mathbf{0}_{6 \times 6}$. This counts the number of detected pixels in each channel from the first layer.
 
 The kernels that determine the positions of pixels of type 4, 5, 6, and 7, are based on the matrix
 \begin{align*}
@@ -1798,7 +1809,7 @@ The kernels that determine the positions of pixels of type 4, 5, 6, and 7, are b
 \end{align*}
 For digits 2 and 5, the first layer of the model detects one pixel of types 0, 1, 4, 5, 6, and 7. For the feature channels that contain the detected type 4, 5, 6, and 7 pixels, multiplying the feature output by $\mathbf{H}$ element-wise returns the number of pixels from the top that the pixel is on, and similarly multiplying the feature output by $\mathbf{H}^T$ element-wise returns the number of pixels from the left that the pixel is on.
 
-A 2 will be indicated by the pixels of type 4 and 6 appearing below the pixels of type 5 and 7, and conversely a 5 will be indicated by the pixels of type 4 and 6 appearing above the pixels of type 5 and 7. We also need to check that the pixels of type 4 and 6 are vertically aligned, and the pixels of type 5 and 7 are vertically aligned. Creating indicators for these conditions ensures that digits 2 and 5 will be detected, and the model is also able to reject configurations such as the one shown in figure \ref{digit:fig3}.
+A 2 will be indicated by the pixels of type 4 and 6 appearing below the pixels of type 5 and 7, and conversely a 5 will be indicated by the pixels of type 4 and 6 appearing above the pixels of type 5 and 7. We also need to check that the pixels of type 4 and 6 are vertically aligned, and the pixels of type 5 and 7 are vertically aligned. Creating indicators for these conditions ensures that digits 2 and 5 will be detected, and the model is also able to reject configurations such as the one shown in figure 7.3.
 
 \begin{figure}[H]\label{digit:fig3}
 \begin{center}
@@ -1815,7 +1826,7 @@ Let $h_p$ and $w_p$ be the number of pixels that the detected pixel of type $p$ 
 \end{align*}
 Evaluating these in the output layer requires 7 extra channels in the second layer. The kernels corresponding to the feature output for the pixel of type $p$ are set to $\pm \mathbf{H}$ or $\pm \mathbf{H}^T$ depending on whether the coefficient for each $h_p$ or $w_p$ is 1 or -1 in the corresponding component. A bias of 1 or -1 is added to complete these terms. All other weights and biases are set to 0. The ReLU activation function is then applied to the layer as a whole to create the components of the indicators above; the counts in the first 10 channels are unaffected by this.
 
-The output layer is a dense layer which functions using a variation of equation \ref{letters:eq0}. There are 10 outputs corresponding to each digit from 0 to 9; the weights for each digit are 1 where the pixel types are expected to be detected, and -1 where they are not. From indicator component channels of the second layer, the weights are 0 apart from to the outputs corresponding to 2 and 5, where the weights are assigned to construct the indicators that should be true for each output. For a digit 2, we should have
+The output layer is a dense layer which functions using a variation of equation \ref{letters:eq0}. There are 10 outputs corresponding to each digit from 0 to 9; the weights connected to the output corresponding to each digit are 1 where the connection comes from pixel types are expected to be detected within the digit, and -1 where they are not expected to be detected. From indicator component channels of the second layer, the weights are 0 apart from the weights connected to the outputs corresponding to digits 2 and 5, where the weights are assigned to construct the indicators that should be true for each output. For a digit 2, we should have
 \begin{align*}
     I(h_4 + h_6 > h_5 + h_7) &= 1, \\
     I(h_5 + h_7 > h_4 + h_6) &= 0, \\
@@ -1840,17 +1851,17 @@ The ReLU activation function is applied to the result, so that the output of thi
 
 \subsection{Approximate Convolution Neural Networks}
 
-We now create an approximate model that can be trained using the dataset containing all the possible images containing digits. The model uses the same architecture in terms of the layer types and their activation functions, but the convolution layers only have 3 channels each. If a model can achieve perfect performance on the training data, we are able to investigate the final weights in visualizations using colors, or 3-channel red/green/blue (RGB) values.
+We now create an approximate model that can be trained using the dataset containing all the possible images containing digits. The model uses the same architecture in terms of the layer types and their activation functions, but the convolution layers only have 3 channels each. If a model can achieve perfect performance on the training data, we are able to investigate the final weights in visualizations using colours, or 3-channel red/green/blue (RGB) values.
 
-The process for finding suitable training values closely followed the process previously described in section \ref{ox:train}. However, it was found that experimenting with the \textit{patience}, the number of epochs over which no improvement would cause training to stop early, was necessary due some of the common behaviour found with this network architecture and training data. The parameters were adjusted by examining plots of the loss over time, and values were chosen once we were able to reliably train a model with satisfactory performance.
+The process for finding suitable training values closely followed the process previously described in section \ref{ox:train}. However, it was found that experimenting with the \textit{patience} (the number of epochs over which no improvement would cause training to stop early) was necessary due some of the common behaviour found with this network architecture and training data. The parameters were adjusted by examining plots of the loss over time, and values were chosen once we were able to reliably train a model with satisfactory performance.
 
 The model performance for the approximate models was assessed by counting the number or percentage of correct classifications made on the dataset containing all the possible images containing digits, ignoring any further images that did not contain digits.
 
 \subsection{Model Improvements}
 
-The goal of the models created in this section was to improve the stability of the training and the overall improvement of the approximate CNNs. The strategy implemented was to repeat the training process with the established parameters, but initializing the weights and biases of the first convolution layer using the weights and biases from the first layer of the hand-built exact model, corresponding to a subset of the 10 channels used to identify pixel types.
+The goal of the models created in this section was to improve the stability of the training and the overall improvement of the approximate CNNs. The strategy implemented was to repeat the training process with the established parameters, but initializing the weights and biases of the first convolution layer using the weights and biases from the first layer of the hand-crafted exact model, corresponding to a subset of the 10 channels used to identify pixel types.
 
-As there are $10^3$ subsets we can choose from to initialize the weights in this manner, it was impractical to run an experiment that tested training at least one model using each possibility. Therefore, we chose to experiment with a smaller subset. Five models were trained where the weights and biases for the first layer were initialized using three copies of the kernel and bias used to detect each pixel type from the hand-built exact model. This resulted in 50 total models trained, which did not take an excessive amount of time to run.
+As there are $10^3$ subsets we can choose from to initialize the weights in this manner, it was impractical to run an experiment that tested training at least one model using each possibility. Therefore, we chose to experiment with a smaller subset. Five models were trained where the weights and biases for the first layer were initialized using three copies of the kernel and bias used to detect each pixel type from the hand-crafted exact model. This resulted in 50 total models trained, which did not take an excessive amount of time to run.
 
 If it made sense to do so, we could have extended this experiment by repeating the experiment, but only using two copies of each kernel while fixing the third kernel to be the one that achieved the best performance in the first round of tests. A final round of tests using the best two-kernel selection from the second round would give us a selection of three starting kernels that we believe to be among the best possible using this idea. However, the results proved that only the first round of tests was necessary to achieve a satisfactory improvement in performance.
 
@@ -1859,7 +1870,7 @@ If it made sense to do so, we could have extended this experiment by repeating t
 The models described above are demonstrated in the Jupyter notebook \url{https://github.com/HectorLeitch/mas6041/blob/main/try_digits.ipynb}. The notebook is split into examples to demonstrate the code, which are described in the following paragraphs.
 
 \begin{exa}
-The function \verb|make_exact_model()| creates the hand-built model which takes an input $\mathbf{X} \in M_{6,6}\left\{0,1\right\}$ and returns the one-hot representation of a recognized digit, or a vector of 0s if no digit is detected. The function \verb|model_classify(M=, img=)| shows the output for the model \verb|M| evaluated on the image \verb|img| as an integer, or shows "reject" if no digit is found.
+The function \verb|make_exact_model()| creates the hand-crafted model which takes an input $\mathbf{X} \in M_{6,6}\left\{0,1\right\}$ and returns the one-hot representation of a recognized digit, or a vector of 0s if no digit is detected. The function \verb|model_classify(M=, img=)| shows the output for the model \verb|M| evaluated on the image \verb|img| as an integer, or shows "reject" if no digit is found.
 
 The example code shows the model working on individual random images, and a selection of images without digits in them to show that it properly rejects certain cases. The function \verb|check_model()| evaluates the model on the full set of possible inputs containing digits, showing that it is correct in every case.
 \end{exa}
@@ -1873,18 +1884,18 @@ The function \verb|make_approx_model(p=3, q=3, r=)| creates an approximate model
 \begin{center}
 \includegraphics[width=12cm]{ex_7_1.png}
 \end{center}
-\caption{Loss over time and percentage accuracy for five models using the same values for the training parameters; the differences are therefore due to the random initialization. There is a reasonable variety in how many epochs were needed, with one run not meeting the early stopping criteria and performing noticeably worse.}
+\caption{Loss over time and final percentage accuracy for five models using the same values for the training parameters; the differences are therefore due to the random initialization. There is a reasonable variety in how many epochs were needed, with one run not meeting the early stopping criteria and performing noticeably worse.}
 \end{figure}
 
-It was found that the training of this model was quite sensitive to the random initialization of the weights. Figure \ref{digit:ex_7_1} shows the loss over time for five different runs using the same values for the training parameters: the learning rate was set to 0.003, and the values for epochs, batch size, and patience were 1000, 128, and 40 respectively. Furthermore, figure \ref{digit:ex_7_2} shows the kernels for the first layer after training. It can be seen that there is no clear pattern in how the first layer is creating features.
+It was found that the training of this model was quite sensitive to the random initialization of the weights. Figure 7.4 shows the loss over time for five different runs using the same values for the training parameters: the learning rate was set to 0.003, and the values for epochs, batch size, and patience were 1000, 128, and 40 respectively. Furthermore, figure 7.5 shows the kernels for the first layer after training. It can be seen that there is no clear pattern in how the first layer is creating features.
 
-However, with the training parameters set these values, quite strong performance could be reliably achieved with the models tending to classify >96\% of the inputs correctly. This was deemed satisfactory performance to use these values for the training parameters going forward.
+However, with the training parameters set to these values, quite strong performance could be reliably achieved with the models tending to classify >96\% of the inputs correctly. This was deemed satisfactory performance to use these values for the training parameters going forward.
 
 \begin{figure}[H]\label{digit:ex_7_2}
 \begin{center}
 \includegraphics[width=6cm]{ex_7_2.png}
 \end{center}
-\caption{Kernels for the first layer in each trained model. Each of the five models occupies one row. While some of the kernels resemble the ones we used to detect certain pixels, there doesn't seem to be a clear pattern to how the first layer is creating features.}
+\caption{Kernels for the first layer in each trained model. Each of the five models occupies one row. While some of the kernels resemble the ones we used to detect certain pixel types, there doesn't seem to be a clear pattern to how the first layer is creating features.}
 \end{figure}
 \end{exa}
 
@@ -1898,9 +1909,9 @@ The function \verb|test_starting_kernels(sk=, r=, epochs=,| \\ \verb|batch_size=
 \caption{Loss over time and percentage accuracy for five models, starting with kernels $\mathbf{K}_0$, $\mathbf{K}_6$, and $\mathbf{K}_9$. The stability of the training procedure has been vastly improved and the performance of the models is very strong, sometimes resulting in a 100\% score. Note that the code can be used to demonstrate that these results are representative of most other combinations.}
 \end{figure}
 
-It was found that using virtually any combination of starting kernels resulted in a much more stable training procedure, with stronger end results than the models trained from randomly initialized weights. Figure \ref{digit:ex_7_3} shows the loss over time for five models, starting with kernels $\mathbf{K}_0$, $\mathbf{K}_6$, and $\mathbf{K}_9$.
+It was found that using virtually any combination of starting kernels resulted in a much more stable training procedure, with stronger end results than the models trained from randomly initialized weights. Figure 7.6 shows the loss over time for five models, starting with kernels $\mathbf{K}_0$, $\mathbf{K}_6$, and $\mathbf{K}_9$.
 
-We can also see that there is a clear pattern in the final kernels in the first layer after training in figure \ref{digit:ex_7_4}.
+We can also see that there is a clear pattern in the final kernels in the first layer after training in figure 7.7.
 
 \begin{figure}[H]\label{digit:ex_7_4}
 \begin{center}
@@ -1915,7 +1926,7 @@ The fact that the kernels in the first layer still resemble the starting kernel 
 \begin{exa}
 The function \verb|test_all(),| performs the experiment of comparing the training of models using three copies of the kernel used to detect each pixel type as initialized weights for the first layer. Table \ref{digit:t1} shows the tabulated results of the choice of starting kernel against the mean percentage of the inputs that were correctly classified across the five models.
 
-Figure \ref{digit:ex_7_5} shows the kernels for the first layer of each model after training for the models using $\mathbf{K}_9$ as the starting kernel. Interestingly, there appears to be more deviation from the starting kernel in this case, which could be due to using three copies in the initialization. While the choice of kernel was sensitive to the random seed, this behaviour was observed consistently rerunning the experiment using the notebook.
+Figure 7.8 shows the kernels for the first layer of each model after training for the models using $\mathbf{K}_9$ as the starting kernel. Interestingly, there appears to be more deviation from the starting kernel in this case, which could be due to using three copies in the initialization. While the choice of kernel was sensitive to the random seed, this behaviour was observed consistently when rerunning the experiment using the notebook.
 
 \begin{table}[h!]
 \centering
@@ -1955,7 +1966,7 @@ The exact model in this chapter followed a similar design philosophy to the lett
 
 \subsection{Training Behaviour}
 
-The approximate models in this chapter proved slightly more challenging to train than those in previous chapters. The trained models seemed to be highly sensitive to the initialization of the weights and biases. Adjusting the learning rate and batch size was quite difficult as large spikes where the loss increased were frequently observed; this may have affected whether or not the stopping criteria was met, so this motivated the decision to add the patience to the stopping criteria as a parameter in an attempt to minimize the impact of a sudden increase in the loss.
+The approximate models in this chapter proved slightly more challenging to train than those in previous chapters. The trained models seemed to be highly sensitive to the initialization of the weights and biases. Adjusting the learning rate and batch size was quite difficult as large spikes where the loss increased were frequently observed. This may have affected whether or not the stopping criterion was met, so this motivated the decision to add the patience to the stopping criterion as a parameter in an attempt to minimize the impact of a sudden increase in the loss.
 
 The models using fixed kernels suffered much less from these issues. It is possible that in choosing weights and biases that were much "better" than randomly chosen ones, the model was able to train as if it had fewer parameters. A possible extension to the experiments performed would have been to not let the model train the weights and biases in the first layer and see if this limited the performance, in a similar fashion to what was done with the residual connections in the previous chapter. However, as the final models chosen in the final part of the experiment were often able to reach 100\% accuracy, it was decided to spend more time on the other chapters in this project.
 
@@ -1964,21 +1975,25 @@ The models using fixed kernels suffered much less from these issues. It is possi
 
 \section{Summary of Completed Work}
 
-The overall goal of this project was to use small neural networks to tackle a variety of problem scenarios, with a focus on using the design of the network architecture to yield models that worked in a way that could be understood by the user, and were less of a "black box" compared to traditional deep neural networks trained on large datasets. Chapters 2 to 5 were mainly focused on building neural networks by hand to achieve a specific task. In some cases, the initial model could be improved upon or generalized. Chapters 6 and 7 mainly focused on training neural networks for slightly more complex tasks, and adapting the network architecture in an intuitive fashion to try to improve the model performance. The models were demonstrated using Jupyter notebooks, each supported by custom functions written in a source file, that can be downloaded and modified to verify the robustness of the models and explore the networks in detail.
+The overall goal of this project was to use small neural networks to tackle a variety of problem scenarios, with a focus on using the design of the network architecture to yield models that worked in a way that could be understood by the user, and were less of a "black box" compared to traditional deep neural networks trained on large datasets.
+
+Chapters 2 to 5 were mainly focused on building neural networks by hand to achieve a specific task. Some of the problems could be solved applying key results through a specific layer architecture, leading to exact solutions where this was more difficult to achieve with a model using training data. In some cases, the initial designs could be improved upon or generalized. It was found that this became increasingly difficult as the models grew larger.
+
+Chapters 6 and 7 mainly focused on training neural networks for slightly more complex tasks, and adapting the network architecture in an intuitive fashion to try to improve the model performance. It was found in chapter 7 that elements from the hand-crafted model were effective in improving the performance and efficiency of these models. The models were demonstrated using Jupyter notebooks, each supported by custom functions written in a source file, that can be downloaded and modified to verify the robustness of the models and explore the networks in detail.
 
 \section{Discussion}
 
 Each chapter contains its own discussion of particular items of interest that arose working on the corresponding problems. However, there were a few common themes which are worth highlighting.
 
-From the chapters involving hand-built models, it became clear that where the input domain was restricted to matrices or vectors of integers, a good strategy was to use weights and biases that were also integers. This restricted the domain at each layer to vectors or matrices of integers only, allowing key results such as equations \ref{bool:eq5} and \ref{letters:eq0} to be applied. The ReLU activation function was the obvious choice to pair with these designs to increase the capabilities of certain layers, as it introduced a further restriction to non-negative integers. The main challenge in developing these models was implementing them in Tensorflow/Keras, where it became difficult to ensure the size and dimensions of each tensor object was correct.
+From the chapters involving hand-crafted models, it became clear that where the input domain was restricted to matrices or vectors of integers, a good strategy was to use weights and biases that were also integers. This restricted the domain at each layer to vectors or matrices of integers only, allowing key results such as equations \ref{bool:eq5} and \ref{letters:eq0} to be applied. The ReLU activation function was the obvious choice to pair with these designs to increase the capabilities of certain layers, as it introduced a further restriction to non-negative integers. The main challenge in developing these models was implementing them in Tensorflow/Keras, where it became difficult to ensure the size and dimensions of each tensor object were correct.
 
 From the chapters involving trained models, the adaptations to the model architectures were generally successful in achieving their goal of improving the model performance. The models were often able to achieve 100\% accuracy with relatively little training after improvements, depending on the random seed set in the program. This was certainly a success according to the original aims of the project, as it was demonstrated that the improvements came from changing the network architectures rather than modifying the training process. However, the ability to accurately and reliably quantify the improvements in each scenario was restricted by the available computing resources and time.
 
 \section{Further Work}
 
-The work done in each chapter tackled each problem from scratch, and therefore we have discussed possible extensions or improvements to the work that directly follow the work done in each case. It is also possible that some of the findings in this project could be more generally applied to other problems. There seems to be little research published regarding small neural networks in particular, so it is possible that continuing to expand these examples would provide useful findings for designing and optimizing smaller networks.
+The work done in each chapter tackled each problem from scratch and, therefore, we have discussed possible extensions or improvements to the work that directly follow the work done in each case. It is also possible that some of the findings in this project could be more generally applied to other problems. There seems to be little research published regarding small neural networks in particular, so it is possible that continuing to expand these examples would provide useful findings for designing and optimizing smaller networks.
 
-The design of a neural network architecture is a process itself that can be automated and tackled using a machine learning-based approach. \citet{luo2018neural} and \citet{pham2018efficient} propose algorithms for efficiently optimizing the architecture of a network through exploring an \textit{architecture space}. The results of chapters 6 and 7 suggest that for specific problems, particular choices could be made to steer the optimization of a neural network architecture through reducing this architecture space, based on a human's understanding of the specific problem.
+The design of a neural network architecture is a process itself that can be automated and tackled using a machine learning-based approach. \citet{luo2018neural} and \citet{pham2018efficient} propose algorithms for efficiently optimizing the architecture of a network through exploring an \textit{architecture space}. The results of chapters 6 and 7 suggest that for specific problems, particular human choices could be made to steer the optimization of a neural network architecture through reducing this architecture space, based on a human's understanding of the specific problem.
 
 
 % To amend the appendices, edit (and save) the file

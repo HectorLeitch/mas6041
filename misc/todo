@@ -52,7 +52,7 @@ To do list:
         - [x] Results tables
         - [x] Introduction graphs
 
-3. [ ][11/13] General cleanup:
+3. [x][13/13] General cleanup:
     - [x] Remove template text
     - [x] Replace \mathbf with \pmb
     - [x] Adjust formatting for any lists to look good
@@ -62,12 +62,12 @@ To do list:
     - [x] Acknowledgements
     - [x] Create own github repo
     - [x] Figure/table/notation check through
-    - [ ] Appendices? code example and inc/exc
+    - [x] Appendices? code example and inc/exc
     - [x] Final formatting
-    - [ ] Check figure refs are working correctly
+    - [x] Check figure refs are working correctly
     - [x] Rewrite letters equation 5.1
 
-4. [ ][13/14] Feedback:
+4. [x][16/16] Feedback:
     - [x] Chapter 2 include 0/1 in trivial case
     - [x] Re-write coefficients using inc/exc
     - [x] Chapter 4 rewrite/organize
@@ -80,5 +80,7 @@ To do list:
     - [x] Add conclusion to intro
     - [x] Add some comments about implementing code
     - [x] Clean up f()
-    - [ ] Ethics page
+    - [x] Ethics page
     - [x] Remove titles from captioned figures
+    - [x] Pass through all proofreading errors
+    - [x] Add literature review
